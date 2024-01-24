@@ -2,25 +2,25 @@ from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
-# from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
+from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, VotingClassifier
 from lightgbm import LGBMClassifier
 from sklearn.preprocessing import LabelEncoder
 
-# import torch
+import torch
 import joblib
 import warnings
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-# import torch.nn.functional as F
+import torch.nn.functional as F
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     original= pd.read_csv('../Database/train.csv')
     train = pd.read_csv('../Database/train_modified3.csv', index_col='ID')
-    test = pd.read_csv('../Database/test_modified2.csv', index_col='ID')
+    test = pd.read_csv('../Database/test_modified3.csv', index_col='ID')
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
@@ -65,19 +65,19 @@ if __name__ == "__main__":
             'device': 'cpu',
             'num_leaves': 100,
             'max_depth': 15,
-            'min_data_in_leaf': 2,
+            'min_data_in_leaf': 3,
             'tree_learner': 'voting',
         }
 
         train_data = lgb.Dataset(X_train, label=y_train)
         valid_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
 
-        num_round = 20
+        num_round = 500
         bst = lgb.train(params, train_data, num_round, valid_sets=[valid_data])
         y_pred = bst.predict(X_test, num_iteration=bst.best_iteration)
         y_pred_class = [int(pred.argmax()) for pred in y_pred]
 
-        # joblib.dump(bst, '../Files/gbm_model.pkl')
+        joblib.dump(bst, '../Files/gbm_model.pkl')
         print("lightGBM Accuracy:", accuracy_score(y_test, y_pred_class))
 
     XGB = False
@@ -90,52 +90,33 @@ if __name__ == "__main__":
         joblib.dump(xgb_model, '../Files/xgb_model.pkl')
         print("XGBoost Accuracy:", accuracy_score(y_test, xgb_model.predict(X_test)))
 
-    Cat = False
-    if Cat:
-        cat_features = [i for i in range(9, 13)]
-
-        cat_model = CatBoostClassifier(
-            iterations=1000,
-            learning_rate=0.1,
-            depth=10,
-            l2_leaf_reg=3,
-            task_type='CPU',
-            loss_function='MultiClassOneVsAll',
-            boosting_type='Ordered',
-            cat_features=cat_features,
-        )
-        cat_model.fit(train_pool, eval_set=val_pool, verbose=5)
-
-        cat_model.fit(X_train, y_train, verbose=1, cat_features=cat_features)
-        print("CatBoost Accuracy:", accuracy_score(y_test, cat_model.predict(X_test)))
-
     VOTE = False
     if VOTE:
         xgb_model = joblib.load('../Files/xgb_model.pkl')
         cat_model = joblib.load('../Files/cat_model.pkl')
-        gbm_model = joblib.load('../Files/gbm_model.pkl')
+        # gbm_model = joblib.load('../Files/gbm_model.pkl')
 
         proba1 = xgb_model.predict_proba(X_test)
         proba2 = cat_model.predict_proba(X_test)
-        proba3 = gbm_model.predict(X_test, num_iteration=gbm_model.best_iteration)
+        # proba3 = gbm_model.predict(X_test, num_iteration=gbm_model.best_iteration)
 
         xgb_result = np.argmax(proba1, axis=1)
         cat_result = np.argmax(proba2, axis=1)
-        gbm_result = [int(pred.argmax()) for pred in proba3]
+        # gbm_result = [int(pred.argmax()) for pred in proba3]
 
         print("XGBoost Accuracy:", accuracy_score(y_test, xgb_result))
         print("CatBoost Accuracy:", accuracy_score(y_test, cat_result))
-        print("lightGBM Accuracy:", accuracy_score(y_test, gbm_result))
+        # print("lightGBM Accuracy:", accuracy_score(y_test, gbm_result))
 
-        average_proba = (proba1 + proba2 + proba3) / 3
+        average_proba = (proba1 + proba2) / 2
         soft_voting_result = np.argmax(average_proba, axis=1)
         print("Soft Voting Accuracy:", accuracy_score(y_test, soft_voting_result))
 
-        if False:
+        if True:
             proba1 = xgb_model.predict_proba(test)
             proba2 = cat_model.predict_proba(test)
-            proba3 = gbm_model.predict(test, num_iteration=gbm_model.best_iteration)
-            average_proba = (proba1 + proba2 + proba3) / 3
+            # proba3 = gbm_model.predict(test, num_iteration=gbm_model.best_iteration)
+            average_proba = (proba1)
             soft_voting_result = np.argmax(average_proba, axis=1)
 
             answer = pd.read_csv('../Database/sample_submission.csv')
