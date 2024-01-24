@@ -2,28 +2,28 @@ from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
-from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
+# from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, VotingClassifier
 from lightgbm import LGBMClassifier
 from sklearn.preprocessing import LabelEncoder
 
-import torch
+# import torch
 import joblib
 import warnings
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-import torch.nn.functional as F
+# import torch.nn.functional as F
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     original= pd.read_csv('../Database/train.csv')
     train = pd.read_csv('../Database/train_modified3.csv', index_col='ID')
-    test = pd.read_csv('../Database/test_modified3.csv', index_col='ID')
+    test = pd.read_csv('../Database/test_modified2.csv', index_col='ID')
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
     RF = False
     if RF:
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         ada_model.fit(X_train, y_train)
         print("AdaBoost Accuracy:", accuracy_score(y_test, ada_model.predict(X_test)))
 
-    GBM = False
+    GBM = True
     if GBM:
         params = {
             'learning_rate': 0.1,
@@ -63,20 +63,21 @@ if __name__ == "__main__":
             'metric': 'multi_logloss',
             'num_class': 7,
             'device': 'cpu',
-            'num_leaves': 200,
+            'num_leaves': 100,
             'max_depth': 15,
+            'min_data_in_leaf': 2,
+            'tree_learner': 'voting',
         }
 
         train_data = lgb.Dataset(X_train, label=y_train)
         valid_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
 
-        num_round = 100
-        bst = train(params, train_data, num_round, valid_sets=[valid_data])
-        LGBMClassifier.fit(params, train_data, num_round, valid_sets=[valid_data])
+        num_round = 20
+        bst = lgb.train(params, train_data, num_round, valid_sets=[valid_data])
         y_pred = bst.predict(X_test, num_iteration=bst.best_iteration)
         y_pred_class = [int(pred.argmax()) for pred in y_pred]
 
-        joblib.dump(bst, '../Files/gbm_model.pkl')
+        # joblib.dump(bst, '../Files/gbm_model.pkl')
         print("lightGBM Accuracy:", accuracy_score(y_test, y_pred_class))
 
     XGB = False
@@ -108,7 +109,7 @@ if __name__ == "__main__":
         cat_model.fit(X_train, y_train, verbose=1, cat_features=cat_features)
         print("CatBoost Accuracy:", accuracy_score(y_test, cat_model.predict(X_test)))
 
-    VOTE = True
+    VOTE = False
     if VOTE:
         xgb_model = joblib.load('../Files/xgb_model.pkl')
         cat_model = joblib.load('../Files/cat_model.pkl')
