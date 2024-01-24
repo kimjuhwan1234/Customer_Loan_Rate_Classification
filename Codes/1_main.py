@@ -19,8 +19,8 @@ import torch.nn.functional as F
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     original= pd.read_csv('../Database/train.csv')
-    train = pd.read_csv('../Database/train_modified2.csv', index_col='ID')
-    test = pd.read_csv('../Database/test_modified2.csv', index_col='ID')
+    train = pd.read_csv('../Database/train_modified3.csv', index_col='ID')
+    test = pd.read_csv('../Database/test_modified3.csv', index_col='ID')
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
