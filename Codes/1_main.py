@@ -54,7 +54,7 @@ if __name__ == "__main__":
         ada_model.fit(X_train, y_train)
         print("AdaBoost Accuracy:", accuracy_score(y_test, ada_model.predict(X_test)))
 
-    GBM = True
+    GBM = False
     if GBM:
         params = {
             'learning_rate': 0.05,
@@ -90,33 +90,33 @@ if __name__ == "__main__":
         joblib.dump(xgb_model, '../Files/xgb_model.pkl')
         print("XGBoost Accuracy:", accuracy_score(y_test, xgb_model.predict(X_test)))
 
-    VOTE = False
+    VOTE = True
     if VOTE:
         xgb_model = joblib.load('../Files/xgb_model.pkl')
         cat_model = joblib.load('../Files/cat_model.pkl')
-        # gbm_model = joblib.load('../Files/gbm_model.pkl')
+        gbm_model = joblib.load('../Files/gbm_model.pkl')
 
         proba1 = xgb_model.predict_proba(X_test)
-        proba2 = cat_model.predict_proba(X_test)
-        # proba3 = gbm_model.predict(X_test, num_iteration=gbm_model.best_iteration)
+        # proba2 = cat_model.predict_proba(X_test)
+        proba3 = gbm_model.predict(X_test, num_iteration=gbm_model.best_iteration)
 
         xgb_result = np.argmax(proba1, axis=1)
-        cat_result = np.argmax(proba2, axis=1)
-        # gbm_result = [int(pred.argmax()) for pred in proba3]
+        # cat_result = np.argmax(proba2, axis=1)
+        gbm_result = [int(pred.argmax()) for pred in proba3]
 
         print("XGBoost Accuracy:", accuracy_score(y_test, xgb_result))
-        print("CatBoost Accuracy:", accuracy_score(y_test, cat_result))
-        # print("lightGBM Accuracy:", accuracy_score(y_test, gbm_result))
+        # print("CatBoost Accuracy:", accuracy_score(y_test, cat_result))
+        print("lightGBM Accuracy:", accuracy_score(y_test, gbm_result))
 
-        average_proba = (proba1 + proba2) / 2
+        average_proba = (proba1 + proba3) / 2
         soft_voting_result = np.argmax(average_proba, axis=1)
         print("Soft Voting Accuracy:", accuracy_score(y_test, soft_voting_result))
 
         if True:
             proba1 = xgb_model.predict_proba(test)
-            proba2 = cat_model.predict_proba(test)
-            # proba3 = gbm_model.predict(test, num_iteration=gbm_model.best_iteration)
-            average_proba = (proba1)
+            # proba2 = cat_model.predict_proba(test)
+            proba3 = gbm_model.predict(test, num_iteration=gbm_model.best_iteration)
+            average_proba = (proba1+proba3)/2
             soft_voting_result = np.argmax(average_proba, axis=1)
 
             answer = pd.read_csv('../Database/sample_submission.csv')
