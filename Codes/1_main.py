@@ -19,11 +19,11 @@ import lightgbm as lgb
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     original= pd.read_csv('../Database/train.csv')
-    train = pd.read_csv('../Database/train_modified2.csv', index_col='ID')
-    test = pd.read_csv('../Database/test_modified2.csv', index_col='ID')
+    train = pd.read_csv('../Database/train_modified4.csv', index_col='ID')
+    test = pd.read_csv('../Database/test_modified4.csv', index_col='ID')
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     RF = False
     if RF:
@@ -54,17 +54,17 @@ if __name__ == "__main__":
         ada_model.fit(X_train, y_train)
         print("AdaBoost Accuracy:", accuracy_score(y_test, ada_model.predict(X_test)))
 
-    GBM = False
+    GBM = True
     if GBM:
         params = {
-            'learning_rate': 0.01,
-            'boosting_type': 'gbdt',
+            'learning_rate': 0.05,
+            'boosting_type': 'gbrt',
             'objective': 'multiclass',
             'metric': 'multi_logloss',
             'num_class': 7,
             'device': 'cpu',
             'num_leaves': 100,
-            'max_depth': 15,
+            'max_depth': 20,
             'min_data_in_leaf': 2,
             'tree_learner': 'voting',
         }
