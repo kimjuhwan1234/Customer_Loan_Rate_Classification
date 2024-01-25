@@ -2,25 +2,25 @@ from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
-from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
+# from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, VotingClassifier
 from lightgbm import LGBMClassifier
 from sklearn.preprocessing import LabelEncoder
 
-import torch
+# import torch
 import joblib
 import warnings
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-import torch.nn.functional as F
+# import torch.nn.functional as F
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     original= pd.read_csv('../Database/train.csv')
-    train = pd.read_csv('../Database/train_modified3.csv', index_col='ID')
-    test = pd.read_csv('../Database/test_modified3.csv', index_col='ID')
+    train = pd.read_csv('../Database/train_modified4.csv', index_col='ID')
+    test = pd.read_csv('../Database/test_modified4.csv', index_col='ID')
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         train_data = lgb.Dataset(X_train, label=y_train)
         valid_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
 
-        num_round = 500
+        num_round = 100
         bst = lgb.train(params, train_data, num_round, valid_sets=[valid_data])
         y_pred = bst.predict(X_test, num_iteration=bst.best_iteration)
         y_pred_class = [int(pred.argmax()) for pred in y_pred]
