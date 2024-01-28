@@ -1,24 +1,25 @@
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-# from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 
-# import torch
 import joblib
 import warnings
-import numpy as np
 import pandas as pd
 import xgboost as xgb
 import lightgbm as lgb
+import catboost as cat
 
 
-# import torch.nn.functional as F
+def RandomForest(params, X_train, y_train, X_test, y_test):
+    rf_model = RandomForestClassifier(**params)
+    rf_model.fit(X_train, y_train)
+    y_pred = rf_model.predict_proba(X_test)
+    predictions = y_pred.argmax(axis=1)
 
-def AdaBoost(params, X_train, y_train, X_test, y_test):
-    ada_model = AdaBoostClassifier(**params)
-    ada_model.fit(X_train, y_train)
-    print("AdaBoost Accuracy:", accuracy_score(y_test, ada_model.predict(X_test)))
+    joblib.dump(rf_model, '../Files/rf_model.pkl')
+    print("RandomForest Accuracy:", accuracy_score(y_test, predictions))
+
+    return y_pred
 
 
 def lightGBM(params, X_train, y_train, X_test, y_test, num_rounds):
@@ -50,6 +51,22 @@ def XGBoost(params, X_train, y_train, X_test, y_test, num_rounds):
     return y_pred
 
 
+def CatBoost(params, X_train, y_train, X_test, y_test, num_rounds):
+    cat_features = [i for i in range(6, 10)]
+    train_pool = cat.Pool(data=X_train, label=y_train, cat_features=cat_features)
+    val_pool = cat.Pool(data=X_test, label=y_test, cat_features=cat_features)
+
+    bst = cat.CatBoostClassifier(**params, iterations=num_rounds)
+    bst.fit(train_pool, eval_set=val_pool, verbose=5)
+    y_pred = bst.predict_proba(X_test)
+    predictions = y_pred.argmax(axis=1)
+
+    joblib.dump(bst, '../Files/cat_model.pkl')
+    print("CatBoost Accuracy:", accuracy_score(y_test, predictions))
+
+    return y_pred
+
+
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     original = pd.read_csv('../Database/train.csv')
@@ -58,17 +75,18 @@ if __name__ == "__main__":
     y = train['대출등급']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    Ada = True
-    if Ada:
+    RF = False
+    if RF:
         params = {
-            'base_estimator': DecisionTreeClassifier(max_depth=5),
             'n_estimators': 100,
-            'learning_rate': 1,
-            'algorithm': 'SAMME.R',
-            'random_state': 42
+            'criterion': 'entropy',
+            'max_depth': 80,
+            'min_samples_split': 2,
+            'min_samples_leaf': 2,
+            'class_weight': 'balanced',
         }
 
-        AdaBoost(params, X_train, y_train, X_test, y_test)
+        proba0 = RandomForest(params, X_train, y_train, X_test, y_test)
 
     GBM = False
     if GBM:
@@ -107,34 +125,22 @@ if __name__ == "__main__":
 
         proba2 = XGBoost(params, X_train, y_train, X_test, y_test, 200)
 
+    CAT = False
+    if CAT:
+        # l2_leaf_reg=3,
+        # boosting_type = 'Ordered'
+        params = {
+            'task_type': 'CPU',
+            'booster': 'gbtree',
+            'loss_function': 'MultiClass',
+            'eval_metric': 'mlogloss',
 
-    Tab = False
-    if Tab:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(device)
-        y_train = np.reshape(y_train, (77034, 1))
-        y_test = np.reshape(y_test, (19259, 1))
+            'num_class': 7,
+            'learning_rate': 0.1,
+            'depth': 10,
 
-        model = TabNetMultiTaskClassifier(
-            n_d=8,  # Decision 단계의 특성 차원
-            n_a=8,  # Attention 단계의 특성 차원
-            n_steps=5,  # Attention 단계의 반복 횟수
-            gamma=1.5,  # Regularization 강도
-            cat_idxs=[i for i in range(9, 13)],  # 범주형 특성의 인덱스
-            cat_dims=[2, 16, 4, 12],  # 범주형 특성의 차원
-            device_name=device,
-        )
+            'gamma': 3,
+            'subsample': 0.6,
+        }
 
-        model.fit(
-            X_train=X_train.values,
-            y_train=y_train,
-            eval_set=[(X_test.values, y_test)],
-            max_epochs=2,
-            patience=5,
-            loss_fn=F.cross_entropy,
-            batch_size=64,
-            virtual_batch_size=32,
-        )
-
-        preds = model.predict(X_test.values)
-        print("TabNet Classifier Accuracy:", accuracy_score(y_test, preds))
+        proba3 = CatBoost(params, X_train, y_train, X_test, y_test, 200)
