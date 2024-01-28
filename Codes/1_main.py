@@ -166,7 +166,7 @@ if __name__ == "__main__":
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-    Tuning = True
+    Tuning = False
     method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_train, X_val, y_train, y_val, 30, Tuning)
 
@@ -196,13 +196,16 @@ if __name__ == "__main__":
             'boosting_type': 'gbrt',
             'objective': 'multiclass',
             'metric': 'multi_logloss',
-
-            'num_class': 7,
-            'learning_rate': 0.05,
-            'max_depth': 15,
-            'num_leaves': 100,
-            'min_data_in_leaf': 2,
             'tree_learner': 'voting',
+            'num_class': 7,
+
+            'learning_rate': 0.03725102606559359,
+            'max_depth': 19,
+            'num_leaves': 292,
+            'min_data_in_leaf': 5,
+            'n_estimators': 270,
+            'subsample': 0.34282119393205945,
+            'colsample_bytree': 0.6204673058774705,
         }
 
         if Tuning:
