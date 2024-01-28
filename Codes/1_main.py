@@ -62,7 +62,6 @@ class Esemble:
 
         return accuracy if self.Tuning else y_pred
 
-
     def CatBoost(self, params):
         cat_features = [i for i in range(6, 10)]
         train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
@@ -80,33 +79,81 @@ class Esemble:
         return accuracy if self.Tuning else y_pred
 
     def objective(self, trial):
-        params = {
-            'device': 'cuda',
-            'booster': 'gbtree',
-            'objective': 'multi:softprob',
-            'eval_metric': 'merror',
-            'num_class': 7,
-
-            'eta': trial.suggest_float('eta', 0.01, 0.3),
-            'max_depth': trial.suggest_int('max_depth', 5, 20),
-            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-            'gamma': trial.suggest_float('gamma', 0.1, 5),
-            'subsample': trial.suggest_float('subsample', 0.5, 1),
-            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-            'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
-            'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
-        }
 
         if self.method == 0:
+            params = {
+                'device': 'cuda',
+                'booster': 'gbtree',
+                'objective': 'multi:softprob',
+                'eval_metric': 'merror',
+                'num_class': 7,
+
+                'eta': trial.suggest_float('eta', 0.01, 0.5),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                'gamma': trial.suggest_float('gamma', 0.1, 5),
+                'subsample': trial.suggest_float('subsample', 0.5, 1),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
+                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
+                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+            }
             accuracy = self.RandomForest(params)
 
         if self.method == 1:
+            params = {
+                'device': 'cuda',
+                'booster': 'gbtree',
+                'objective': 'multi:softprob',
+                'eval_metric': 'merror',
+                'num_class': 7,
+
+                'eta': trial.suggest_float('eta', 0.01, 0.5),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                'gamma': trial.suggest_float('gamma', 0.1, 5),
+                'subsample': trial.suggest_float('subsample', 0.5, 1),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
+                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
+                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+            }
             accuracy = self.lightGBM(params)
 
         if self.method == 2:
+            params = {
+                'device': 'cuda',
+                'booster': 'gbtree',
+                'objective': 'multi:softprob',
+                'eval_metric': 'merror',
+                'num_class': 7,
+
+                'eta': trial.suggest_float('eta', 0.01, 0.5),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                'gamma': trial.suggest_float('gamma', 0.1, 5),
+                'subsample': trial.suggest_float('subsample', 0.5, 1),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
+                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
+                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+            }
             accuracy = self.XGBoost(params)
 
         if self.method == 3:
+            params = {
+                'device': 'cuda',
+                'booster': 'gbtree',
+                'objective': 'multi:softprob',
+                'eval_metric': 'merror',
+                'num_class': 7,
+
+                'eta': trial.suggest_float('eta', 0.01, 0.5),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                'gamma': trial.suggest_float('gamma', 0.1, 5),
+                'subsample': trial.suggest_float('subsample', 0.5, 1),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
+                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
+                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+            }
             accuracy = self.CatBoost(params)
 
         return accuracy
@@ -120,7 +167,7 @@ if __name__ == "__main__":
     y = train['대출등급']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
     Tuning = True
-    method = 2 # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_train, X_val, y_train, y_val, 200, Tuning)
 
     if method == 0:
@@ -180,11 +227,11 @@ if __name__ == "__main__":
             'eta': 0.3,
             'max_depth': 15,
             'min_child_weight': 1,
-            'gamma': 1,
-            'subsample': 0.5,
-            'colsample_bytree': 0.5,
-            'colsample_bylevel': 0.5,
-            'colsample_bynode': 0.5,
+            'gamma': 0.9486363409750519,
+            'subsample': 0.7606871822635872,
+            'colsample_bytree': 0.6187211406333024,
+            'colsample_bylevel': 0.9696576494941724,
+            'colsample_bynode': 0.8369204966889496,
         }
 
         if Tuning:
