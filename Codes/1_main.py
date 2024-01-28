@@ -101,20 +101,20 @@ class Esemble:
 
         if self.method == 1:
             params = {
-                'device': 'cuda',
-                'booster': 'gbtree',
-                'objective': 'multi:softprob',
-                'eval_metric': 'merror',
+                'device': 'cpu',
+                'boosting_type': 'gbrt',
+                'objective': 'multiclass',
+                'metric': 'multi_logloss',
+                'tree_learner': 'voting',
                 'num_class': 7,
 
-                'eta': trial.suggest_float('eta', 0.01, 0.5),
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
                 'max_depth': trial.suggest_int('max_depth', 5, 20),
-                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-                'gamma': trial.suggest_float('gamma', 0.1, 5),
-                'subsample': trial.suggest_float('subsample', 0.5, 1),
-                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
-                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+                'num_leaves': trial.suggest_int('num_leaves', 50, 300),
+                'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 1, 100),
+                'n_estimators': trial.suggest_int('n_estimators', 50, 500),
+                'subsample': trial.suggest_float('subsample', 0.01, 1),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.01, 1),
             }
             accuracy = self.lightGBM(params)
 
@@ -166,9 +166,9 @@ if __name__ == "__main__":
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-    Tuning = False
-    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_train, X_val, y_train, y_val, 200, Tuning)
+    Tuning = True
+    method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_train, X_val, y_train, y_val, 30, Tuning)
 
     if method == 0:
         params = {
@@ -200,7 +200,6 @@ if __name__ == "__main__":
             'num_class': 7,
             'learning_rate': 0.05,
             'max_depth': 15,
-
             'num_leaves': 100,
             'min_data_in_leaf': 2,
             'tree_learner': 'voting',
