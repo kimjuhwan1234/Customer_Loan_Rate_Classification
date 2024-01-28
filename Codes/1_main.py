@@ -166,7 +166,7 @@ if __name__ == "__main__":
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-    Tuning = True
+    Tuning = False
     method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_train, X_val, y_train, y_val, 200, Tuning)
 
@@ -224,14 +224,14 @@ if __name__ == "__main__":
             'eval_metric': 'merror',
             'num_class': 7,
 
-            'eta': 0.3,
-            'max_depth': 15,
-            'min_child_weight': 1,
-            'gamma': 0.9486363409750519,
-            'subsample': 0.7606871822635872,
-            'colsample_bytree': 0.6187211406333024,
-            'colsample_bylevel': 0.9696576494941724,
-            'colsample_bynode': 0.8369204966889496,
+            'eta': 0.1194429642740745,
+            'max_depth': 16,
+            'min_child_weight': 2,
+            'gamma': 1.609812215717626,
+            'subsample': 0.9651173030024425,
+            'colsample_bytree': 0.7167440261526182,
+            'colsample_bylevel': 0.8582960408310336,
+            'colsample_bynode': 0.859518966138014,
         }
 
         if Tuning:
