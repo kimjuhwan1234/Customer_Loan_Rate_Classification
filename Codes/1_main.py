@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
 import joblib
+import optuna
 import warnings
 import pandas as pd
 import xgboost as xgb
@@ -10,61 +11,105 @@ import lightgbm as lgb
 import catboost as cat
 
 
-def RandomForest(params, X_train, y_train, X_test, y_test):
-    rf_model = RandomForestClassifier(**params)
-    rf_model.fit(X_train, y_train)
-    y_pred = rf_model.predict_proba(X_test)
-    predictions = y_pred.argmax(axis=1)
+class Esemble:
+    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, Tuning: bool):
+        self.method = method
+        self.X_train = X_train
+        self.X_test = X_val
+        self.y_train = y_train
+        self.y_test = y_val
+        self.num_rounds = num_rounds
+        self.Tuning = Tuning
 
-    joblib.dump(rf_model, '../Files/rf_model.pkl')
-    print("RandomForest Accuracy:", accuracy_score(y_test, predictions))
+    def RandomForest(self, params):
+        rf_model = RandomForestClassifier(**params)
+        rf_model.fit(self.X_train, self.y_train)
+        y_pred = rf_model.predict_proba(self.X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = accuracy_score(self.y_test, predictions)
 
-    return y_pred
+        joblib.dump(rf_model, '../Files/rf_model.pkl')
+        print("RandomForest Accuracy:", accuracy)
+
+        return accuracy if self.Tuning else y_pred
+
+    def lightGBM(self, params):
+        train_data = lgb.Dataset(self.X_train, label=self.y_train)
+        valid_data = lgb.Dataset(self.X_test, label=self.y_test, reference=train_data)
+
+        bst = lgb.train(params, train_data, self.num_rounds, valid_sets=[valid_data])
+        y_pred = bst.predict(self.X_test, num_iteration=bst.best_iteration)
+        predictions = [int(pred.argmax()) for pred in y_pred]
+        accuracy = accuracy_score(self.y_test, predictions)
+
+        joblib.dump(bst, '../Files/lgb_model.pkl')
+        print("lightGBM Accuracy:", accuracy)
+
+        return accuracy if self.Tuning else y_pred
+
+    def XGBoost(self, params):
+        train_data = xgb.DMatrix(self.X_train, label=self.y_train)
+        valid_data = xgb.DMatrix(self.X_test, label=self.y_test)
+
+        bst = xgb.train(params, train_data, self.num_rounds, evals=[(valid_data, 'eval')])
+        X_test = xgb.DMatrix(self.X_test)
+        y_pred = bst.predict(X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = accuracy_score(self.y_test, predictions)
+
+        joblib.dump(bst, '../Files/xgb_model.pkl')
+        print("XGBoost Accuracy:", accuracy)
+
+        return accuracy if self.Tuning else y_pred
 
 
-def lightGBM(params, X_train, y_train, X_test, y_test, num_rounds):
-    train_data = lgb.Dataset(X_train, label=y_train)
-    valid_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
+    def CatBoost(self, params):
+        cat_features = [i for i in range(6, 10)]
+        train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
+        val_pool = cat.Pool(data=self.X_test, label=self.y_test, cat_features=cat_features)
 
-    bst = lgb.train(params, train_data, num_rounds, valid_sets=[valid_data])
-    y_pred = bst.predict(X_test, num_iteration=bst.best_iteration)
-    predictions = [int(pred.argmax()) for pred in y_pred]
+        bst = cat.CatBoostClassifier(**params, iterations=self.num_rounds)
+        bst.fit(train_pool, eval_set=val_pool, verbose=5)
+        y_pred = bst.predict_proba(self.X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = accuracy_score(self.y_test, predictions)
 
-    joblib.dump(bst, '../Files/gbm_model.pkl')
-    print("lightGBM Accuracy:", accuracy_score(y_test, predictions))
+        joblib.dump(bst, '../Files/cat_model.pkl')
+        print("CatBoost Accuracy:", accuracy)
 
-    return y_pred
+        return accuracy if self.Tuning else y_pred
 
+    def objective(self, trial):
+        params = {
+            'device': 'cuda',
+            'booster': 'gbtree',
+            'objective': 'multi:softprob',
+            'eval_metric': 'merror',
+            'num_class': 7,
 
-def XGBoost(params, X_train, y_train, X_test, y_test, num_rounds):
-    train_data = xgb.DMatrix(X_train, label=y_train)
-    valid_data = xgb.DMatrix(X_test, label=y_test)
+            'eta': trial.suggest_float('eta', 0.01, 0.3),
+            'max_depth': trial.suggest_int('max_depth', 5, 20),
+            'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+            'gamma': trial.suggest_float('gamma', 0.1, 5),
+            'subsample': trial.suggest_float('subsample', 0.5, 1),
+            'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
+            'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
+            'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+        }
 
-    bst = xgb.train(params, train_data, num_rounds, evals=[(valid_data, 'eval')])
-    X_test = xgb.DMatrix(X_test)
-    y_pred = bst.predict(X_test)
-    predictions = y_pred.argmax(axis=1)
+        if self.method == 0:
+            accuracy = self.RandomForest(params)
 
-    joblib.dump(bst, '../Files/xgb_model.pkl')
-    print("XGBoost Accuracy:", accuracy_score(y_test, predictions))
+        if self.method == 1:
+            accuracy = self.lightGBM(params)
 
-    return y_pred
+        if self.method == 2:
+            accuracy = self.XGBoost(params)
 
+        if self.method == 3:
+            accuracy = self.CatBoost(params)
 
-def CatBoost(params, X_train, y_train, X_test, y_test, num_rounds):
-    cat_features = [i for i in range(6, 10)]
-    train_pool = cat.Pool(data=X_train, label=y_train, cat_features=cat_features)
-    val_pool = cat.Pool(data=X_test, label=y_test, cat_features=cat_features)
-
-    bst = cat.CatBoostClassifier(**params, iterations=num_rounds)
-    bst.fit(train_pool, eval_set=val_pool, verbose=5)
-    y_pred = bst.predict_proba(X_test)
-    predictions = y_pred.argmax(axis=1)
-
-    joblib.dump(bst, '../Files/cat_model.pkl')
-    print("CatBoost Accuracy:", accuracy_score(y_test, predictions))
-
-    return y_pred
+        return accuracy
 
 
 if __name__ == "__main__":
@@ -73,10 +118,12 @@ if __name__ == "__main__":
     train = pd.read_csv('../Database/train_preprocessed.csv', index_col='ID')
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+    Tuning = True
+    method = 2 # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_train, X_val, y_train, y_val, 200, Tuning)
 
-    RF = False
-    if RF:
+    if method == 0:
         params = {
             'n_estimators': 100,
             'criterion': 'entropy',
@@ -86,10 +133,17 @@ if __name__ == "__main__":
             'class_weight': 'balanced',
         }
 
-        proba0 = RandomForest(params, X_train, y_train, X_test, y_test)
+        if Tuning:
+            study = optuna.create_study(direction='maximize')
+            study.optimize(E.objective, n_trials=100)
 
-    GBM = False
-    if GBM:
+            print('Number of finished trials:', len(study.trials))
+            print('Best trial:', study.best_trial.params)
+
+        if not Tuning:
+            proba0 = E.RandomForest(params)
+
+    if method == 1:
         params = {
             'device': 'cpu',
             'boosting_type': 'gbrt',
@@ -105,28 +159,45 @@ if __name__ == "__main__":
             'tree_learner': 'voting',
         }
 
-        proba1 = lightGBM(params, X_train, y_train, X_test, y_test, 200)
+        if Tuning:
+            study = optuna.create_study(direction='maximize')
+            study.optimize(E.objective, n_trials=100)
 
-    XGB = False
-    if XGB:
+            print('Number of finished trials:', len(study.trials))
+            print('Best trial:', study.best_trial.params)
+
+        if not Tuning:
+            proba1 = E.lightGBM(params)
+
+    if method == 2:
         params = {
             'device': 'cuda',
             'booster': 'gbtree',
             'objective': 'multi:softprob',
-            'eval_metric': 'mlogloss',
-
+            'eval_metric': 'merror',
             'num_class': 7,
-            'eta': 0.05,
-            'max_depth': 15,
 
-            'gamma': 3,
-            'subsample': 0.6,
+            'eta': 0.3,
+            'max_depth': 15,
+            'min_child_weight': 1,
+            'gamma': 1,
+            'subsample': 0.5,
+            'colsample_bytree': 0.5,
+            'colsample_bylevel': 0.5,
+            'colsample_bynode': 0.5,
         }
 
-        proba2 = XGBoost(params, X_train, y_train, X_test, y_test, 200)
+        if Tuning:
+            study = optuna.create_study(direction='maximize')
+            study.optimize(E.objective, n_trials=100)
 
-    CAT = False
-    if CAT:
+            print('Number of finished trials:', len(study.trials))
+            print('Best trial:', study.best_trial.params)
+
+        if not Tuning:
+            proba2 = E.XGBoost(params)
+
+    if method == 3:
         # l2_leaf_reg=3,
         # boosting_type = 'Ordered'
         params = {
@@ -143,4 +214,12 @@ if __name__ == "__main__":
             'subsample': 0.6,
         }
 
-        proba3 = CatBoost(params, X_train, y_train, X_test, y_test, 200)
+        if Tuning:
+            study = optuna.create_study(direction='maximize')
+            study.optimize(E.objective, n_trials=100)
+
+            print('Number of finished trials:', len(study.trials))
+            print('Best trial:', study.best_trial.params)
+
+        if not Tuning:
+            proba3 = E.CatBoost(params)
