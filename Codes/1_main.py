@@ -64,7 +64,7 @@ class Esemble:
         return accuracy if self.Tuning else y_pred
 
     def CatBoost(self, params):
-        cat_features = [i for i in range(6, 9)]
+        cat_features = [i for i in range(6, 10)]
         train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
         val_pool = cat.Pool(data=self.X_test, label=self.y_test, cat_features=cat_features)
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = True
+    Tuning = False
     method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
@@ -257,17 +257,18 @@ if __name__ == "__main__":
             'task_type': 'GPU',
             'boosting_type': 'Plain',
             'loss_function': 'MultiClass',
-            'eval_metric': 'Accuracy',
-            'bootstrap_type': 'Bayesian',
+            'eval_metric': 'MultiClass',
             'classes_count': 7,
-            'od_pval': 0.01,
-            'grow_policy': 'Lossguide',
 
-            'learning_rate': 0.3507503309653496,
-            'depth': 14,
-            'l2_leaf_reg': 7,
-            'num_leaves': 100,
-            'border_count': 200,
+            'bootstrap_type': 'Bayesian',
+            'grow_policy': 'Lossguide',
+            'od_pval': 0.01,
+
+            'learning_rate': 0.17606216022122398,
+            'depth': 19,
+            'l2_leaf_reg': 6,
+            'num_leaves': 148,
+            'border_count': 272,
         }
 
         if Tuning:
