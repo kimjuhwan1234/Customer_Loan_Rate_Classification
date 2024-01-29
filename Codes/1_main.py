@@ -166,9 +166,13 @@ if __name__ == "__main__":
     X = train.drop(columns=['대출등급'])
     y = train['대출등급']
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    smote = SMOTE(random_state=42)
+    X_res, y_res = smote.fit_resample(X_train, y_train)
+
     Tuning = False
     method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_train, X_val, y_train, y_val, 30, Tuning)
+    E = Esemble(method, X_res, X_val, y_res, y_val, 30, Tuning)
 
     if method == 0:
         params = {
