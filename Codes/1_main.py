@@ -64,7 +64,7 @@ class Esemble:
         return accuracy if self.Tuning else y_pred
 
     def CatBoost(self, params):
-        cat_features = [i for i in range(6, 10)]
+        cat_features = [i for i in range(6, 9)]
         train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
         val_pool = cat.Pool(data=self.X_test, label=self.y_test, cat_features=cat_features)
 
@@ -87,9 +87,9 @@ class Esemble:
                 'class_weight': 'balanced',
 
                 'n_estimators': trial.suggest_int('n_estimators', 100, 500),
-                'max_depth': trial.suggest_int('max_depth', 5, 100),
-                'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
-                'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 20),
+                'max_depth': trial.suggest_int('max_depth', 5, 80),
+                'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
+                'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
                 'min_weight_fraction_leaf': trial.suggest_float('min_weight_fraction_leaf', 0.01, 0.5),
                 'max_leaf_nodes': trial.suggest_int('max_leaf_nodes', 10, 100),
             }
@@ -135,20 +135,16 @@ class Esemble:
 
         if self.method == 3:
             params = {
-                'device': 'cuda',
-                'booster': 'gbtree',
-                'objective': 'multi:softprob',
-                'eval_metric': 'merror',
-                'num_class': 7,
+                'task_type': 'CPU',
+                'boosting_type': 'Ordered',
+                'loss_function': 'MultiClass',
 
-                'eta': trial.suggest_float('eta', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 20),
-                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-                'gamma': trial.suggest_float('gamma', 0.1, 5),
-                'subsample': trial.suggest_float('subsample', 0.5, 1),
-                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
-                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+
+                'iterations': 1000,
+                'learning_rate': 0.1,
+                'depth': 10,
+                'l2_leaf_reg': 3,
+
             }
             accuracy = self.CatBoost(params)
 
@@ -166,9 +162,9 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = True
-    method = 0  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 30, Tuning)
+    Tuning = False
+    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_res, X_val, y_res, y_val, 200, Tuning)
 
     if method == 0:
         params = {
@@ -202,13 +198,13 @@ if __name__ == "__main__":
             'tree_learner': 'voting',
             'num_class': 7,
 
-            'learning_rate': 0.03725102606559359,
-            'max_depth': 19,
-            'num_leaves': 292,
-            'min_data_in_leaf': 5,
-            'n_estimators': 270,
-            'subsample': 0.34282119393205945,
-            'colsample_bytree': 0.6204673058774705,
+            'learning_rate': 0.16186823348399854,
+            'max_depth': 20,
+            'num_leaves': 216,
+            'min_data_in_leaf': 3,
+            'n_estimators': 404,
+            'subsample':0.9129531781223076,
+            'colsample_bytree': 0.5311871644703503,
         }
 
         if Tuning:
@@ -229,14 +225,14 @@ if __name__ == "__main__":
             'eval_metric': 'merror',
             'num_class': 7,
 
-            'eta': 0.1194429642740745,
-            'max_depth': 16,
-            'min_child_weight': 2,
-            'gamma': 1.609812215717626,
-            'subsample': 0.9651173030024425,
-            'colsample_bytree': 0.7167440261526182,
-            'colsample_bylevel': 0.8582960408310336,
-            'colsample_bynode': 0.859518966138014,
+            'eta': 0.17649041654669656,
+            'max_depth': 17,
+            'min_child_weight': 4,
+            'gamma': 0.7140173599495627,
+            'subsample': 0.9427295598784581,
+            'colsample_bytree': 0.7170099311806741,
+            'colsample_bylevel': 0.956430558338542,
+            'colsample_bynode': 0.9788900022922193,
         }
 
         if Tuning:
