@@ -135,15 +135,21 @@ class Esemble:
 
         if self.method == 3:
             params = {
-                'task_type': 'CPU',
-                'boosting_type': 'Ordered',
+                'task_type': 'GPU',
+                'boosting_type': 'Plain',
                 'loss_function': 'MultiClass',
+                'eval_metric': 'Accuracy',
+                'bootstrap_type': 'Bayesian',
+                'classes_count': 7,
+                'od_pval': 0.01,
+                'grow_policy': 'Lossguide',
 
+                'learning_rate':trial.suggest_float('learning_rate', 0.01, 0.5),
+                'depth': trial.suggest_int('depth', 5, 20),
+                'l2_leaf_reg': trial.suggest_int('l2_leaf_reg', 3, 20),
+                'subsample': trial.suggest_float('subsample', 0.5, 1),
+                'num_leaves': trial.suggest_int('num_leaves', 16, 100),
 
-                'iterations': 1000,
-                'learning_rate': 0.1,
-                'depth': 10,
-                'l2_leaf_reg': 3,
 
             }
             accuracy = self.CatBoost(params)
