@@ -83,20 +83,15 @@ class Esemble:
 
         if self.method == 0:
             params = {
-                'device': 'cuda',
-                'booster': 'gbtree',
-                'objective': 'multi:softprob',
-                'eval_metric': 'merror',
-                'num_class': 7,
+                'criterion': 'entropy',
+                'class_weight': 'balanced',
 
-                'eta': trial.suggest_float('eta', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 20),
-                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-                'gamma': trial.suggest_float('gamma', 0.1, 5),
-                'subsample': trial.suggest_float('subsample', 0.5, 1),
-                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
-                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
+                'n_estimators': trial.suggest_int('n_estimators', 100, 500),
+                'max_depth': trial.suggest_int('max_depth', 5, 100),
+                'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
+                'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 20),
+                'min_weight_fraction_leaf': trial.suggest_float('min_weight_fraction_leaf', 0.01, 0.5),
+                'max_leaf_nodes': trial.suggest_int('max_leaf_nodes', 10, 100),
             }
             accuracy = self.RandomForest(params)
 
@@ -171,18 +166,21 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = False
-    method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    Tuning = True
+    method = 0  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_res, X_val, y_res, y_val, 30, Tuning)
 
     if method == 0:
         params = {
-            'n_estimators': 100,
             'criterion': 'entropy',
+            'class_weight': 'balanced',
+
+            'n_estimators': 100,
             'max_depth': 80,
             'min_samples_split': 2,
             'min_samples_leaf': 2,
-            'class_weight': 'balanced',
+            'min_weight_fraction_leaf': 1,
+            'max_leaf_nodes': 10,
         }
 
         if Tuning:
