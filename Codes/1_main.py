@@ -138,19 +138,18 @@ class Esemble:
                 'task_type': 'GPU',
                 'boosting_type': 'Plain',
                 'loss_function': 'MultiClass',
-                'eval_metric': 'Accuracy',
-                'bootstrap_type': 'Bayesian',
+                'eval_metric': 'MultiClass',
                 'classes_count': 7,
-                'od_pval': 0.01,
+
                 'grow_policy': 'Lossguide',
+                'bootstrap_type': 'Bayesian',
+                'od_pval': 0.01,
 
                 'learning_rate':trial.suggest_float('learning_rate', 0.01, 0.5),
                 'depth': trial.suggest_int('depth', 5, 20),
                 'l2_leaf_reg': trial.suggest_int('l2_leaf_reg', 3, 20),
-                'subsample': trial.suggest_float('subsample', 0.5, 1),
-                'num_leaves': trial.suggest_int('num_leaves', 16, 100),
-
-
+                'num_leaves': trial.suggest_int('num_leaves', 16, 300),
+                'border_count':trial.suggest_int('border_count', 1, 300),
             }
             accuracy = self.CatBoost(params)
 
@@ -168,9 +167,9 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = False
-    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 200, Tuning)
+    Tuning = True
+    method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
         params = {
@@ -255,17 +254,20 @@ if __name__ == "__main__":
         # l2_leaf_reg=3,
         # boosting_type = 'Ordered'
         params = {
-            'task_type': 'CPU',
-            'booster': 'gbtree',
+            'task_type': 'GPU',
+            'boosting_type': 'Plain',
             'loss_function': 'MultiClass',
-            'eval_metric': 'mlogloss',
+            'eval_metric': 'Accuracy',
+            'bootstrap_type': 'Bayesian',
+            'classes_count': 7,
+            'od_pval': 0.01,
+            'grow_policy': 'Lossguide',
 
-            'num_class': 7,
-            'learning_rate': 0.1,
-            'depth': 10,
-
-            'gamma': 3,
-            'subsample': 0.6,
+            'learning_rate': 0.3507503309653496,
+            'depth': 14,
+            'l2_leaf_reg': 7,
+            'num_leaves': 100,
+            'border_count': 200,
         }
 
         if Tuning:
