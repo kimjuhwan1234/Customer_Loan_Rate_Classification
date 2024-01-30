@@ -1,7 +1,9 @@
 from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
+from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+
 
 import joblib
 import optuna
@@ -79,6 +81,18 @@ class Esemble:
 
         return accuracy if self.Tuning else y_pred
 
+    def MLPClassifier(self, params):
+        mlp = MLPClassifier(**params, max_iter=self.num_rounds)
+        mlp.fit(self.X_train, self.y_train)
+        y_pred = mlp.predict_proba(self.X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = accuracy_score(self.y_test, predictions)
+
+        joblib.dump(mlp, '../Files/mlp_model.pkl')
+        print("MLP Classifier Accuracy:", accuracy)
+
+        return accuracy if self.Tuning else y_pred
+
     def objective(self, trial):
 
         if self.method == 0:
@@ -153,6 +167,17 @@ class Esemble:
             }
             accuracy = self.CatBoost(params)
 
+        if self.method == 4:
+            params = {
+                'solver': 'adam',
+                'activation': 'relu',
+                'hidden_layer_sizes': (100,),
+
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
+                'alpha': trial.suggest_float('learning_rate', 0.000000001, 0.1),
+            }
+            accuracy = self.MLPClassifier(params)
+
         return accuracy
 
 
@@ -167,8 +192,8 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = False
-    method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    Tuning = True
+    method = 4  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
     E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
@@ -251,8 +276,6 @@ if __name__ == "__main__":
             proba2 = E.XGBoost(params)
 
     if method == 3:
-        # l2_leaf_reg=3,
-        # boosting_type = 'Ordered'
         params = {
             'task_type': 'GPU',
             'boosting_type': 'Plain',
@@ -280,3 +303,18 @@ if __name__ == "__main__":
 
         if not Tuning:
             proba3 = E.CatBoost(params)
+
+    if method == 4:
+        params = {
+
+        }
+
+        if Tuning:
+            study = optuna.create_study(direction='maximize')
+            study.optimize(E.objective, n_trials=100)
+
+            print('Number of finished trials:', len(study.trials))
+            print('Best trial:', study.best_trial.params)
+
+        if not Tuning:
+            proba3 = E.MLPClassifier(params)
