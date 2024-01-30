@@ -276,6 +276,8 @@ if __name__ == "__main__":
             proba2 = E.XGBoost(params)
 
     if method == 3:
+        # l2_leaf_reg=3,
+        # boosting_type = 'Ordered'
         params = {
             'task_type': 'GPU',
             'boosting_type': 'Plain',
