@@ -1,6 +1,7 @@
+from sklearn.svm import SVC
 from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
-from sklearn.neural_network import MLPClassifier
+from sklearn.multiclass import OutputCodeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
@@ -81,15 +82,15 @@ class Esemble:
 
         return accuracy if self.Tuning else y_pred
 
-    def MLPClassifier(self, params):
-        mlp = MLPClassifier(**params, max_iter=self.num_rounds)
-        mlp.fit(self.X_train, self.y_train)
-        y_pred = mlp.predict_proba(self.X_test)
+    def Output_Code_Classifier(self, params):
+        clf = OutputCodeClassifier(SVC(kernel="rbf", verbose=True))
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict_proba(self.X_test)
         predictions = y_pred.argmax(axis=1)
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(mlp, '../Files/mlp_model.pkl')
-        print("MLP Classifier Accuracy:", accuracy)
+        joblib.dump(clf, '../Files/clf_model.pkl')
+        print("Output Code Classifier Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -169,14 +170,10 @@ class Esemble:
 
         if self.method == 4:
             params = {
-                'solver': 'adam',
-                'activation': 'relu',
-                'learning_rate': 'adaptive',
-                'hidden_layer_sizes': (100,),
-
-                'alpha': trial.suggest_float('learning_rate', 0.000000001, 0.1),
+                'gamma': trial.suggest_float('gamma', 0.01, 0.5),
+                'C': trial.suggest_int('C', 100, 1000),
             }
-            accuracy = self.MLPClassifier(params)
+            accuracy = self.Output_Code_Classifier(params)
 
         return accuracy
 
@@ -192,8 +189,8 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = True
-    method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
+    Tuning = False
+    method = 4  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
     E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
@@ -308,11 +305,8 @@ if __name__ == "__main__":
 
     if method == 4:
         params = {
-            'solver': 'adam',
-            'activation': 'relu',
-            'learning_rate': 'adaptive',
-            'verbose': True,
-            'hidden_layer_sizes': (100,),
+            'gamma': 0.2,
+            'C': 1000,
         }
 
         if Tuning:
@@ -323,4 +317,4 @@ if __name__ == "__main__":
             print('Best trial:', study.best_trial.params)
 
         if not Tuning:
-            proba3 = E.MLPClassifier(params)
+            proba3 = E.Output_Code_Classifier(params)
