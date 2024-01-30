@@ -1,18 +1,19 @@
-from sklearn.svm import SVC
 from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
-from sklearn.multiclass import OutputCodeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 
-
+import torch
 import joblib
 import optuna
 import warnings
+import numpy as np
 import pandas as pd
 import xgboost as xgb
 import lightgbm as lgb
 import catboost as cat
+import torch.nn.functional as F
 
 
 class Esemble:
@@ -82,14 +83,26 @@ class Esemble:
 
         return accuracy if self.Tuning else y_pred
 
-    def Output_Code_Classifier(self, params):
-        clf = OutputCodeClassifier(SVC(kernel="rbf", verbose=True))
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict_proba(self.X_test)
+    def TabNet(self, params):
+
+        bst = TabNetMultiTaskClassifier(**params)
+        bst.fit(
+            X_train=self.X_train.values,
+            y_train=self.y_train.values.reshape(-1, 1),
+            eval_set=[(self.X_test.values, self.y_test.values.reshape(-1,1))],
+            max_epochs=2,
+            patience=5,
+            loss_fn=F.cross_entropy,
+            batch_size=1024,
+            virtual_batch_size=512,
+        )
+
+        y_pred = bst.predict_proba(self.X_test.values)
+        y_pred = np.array(y_pred, dtype=np.float64).squeeze()
         predictions = y_pred.argmax(axis=1)
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(clf, '../Files/clf_model.pkl')
+        joblib.dump(bst, '../Files/tab_model.pkl')
         print("Output Code Classifier Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
@@ -273,8 +286,6 @@ if __name__ == "__main__":
             proba2 = E.XGBoost(params)
 
     if method == 3:
-        # l2_leaf_reg=3,
-        # boosting_type = 'Ordered'
         params = {
             'task_type': 'GPU',
             'boosting_type': 'Plain',
@@ -317,4 +328,4 @@ if __name__ == "__main__":
             print('Best trial:', study.best_trial.params)
 
         if not Tuning:
-            proba3 = E.Output_Code_Classifier(params)
+            proba3 = E.TabNet(params)
