@@ -171,9 +171,9 @@ class Esemble:
             params = {
                 'solver': 'adam',
                 'activation': 'relu',
+                'learning_rate': 'adaptive',
                 'hidden_layer_sizes': (100,),
 
-                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
                 'alpha': trial.suggest_float('learning_rate', 0.000000001, 0.1),
             }
             accuracy = self.MLPClassifier(params)
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
     Tuning = True
-    method = 4  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
+    method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
     E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
@@ -308,7 +308,11 @@ if __name__ == "__main__":
 
     if method == 4:
         params = {
-
+            'solver': 'adam',
+            'activation': 'relu',
+            'learning_rate': 'adaptive',
+            'verbose': True,
+            'hidden_layer_sizes': (100,),
         }
 
         if Tuning:
