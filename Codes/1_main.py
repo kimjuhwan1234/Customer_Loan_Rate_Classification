@@ -189,8 +189,8 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = False
-    method = 4  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
+    Tuning = True
+    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3, MLP=4}
     E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
@@ -225,13 +225,13 @@ if __name__ == "__main__":
             'tree_learner': 'voting',
             'num_class': 7,
 
-            'learning_rate': 0.16186823348399854,
+            'learning_rate': 0.24629456468640956,
             'max_depth': 20,
-            'num_leaves': 216,
-            'min_data_in_leaf': 3,
-            'n_estimators': 404,
-            'subsample':0.9129531781223076,
-            'colsample_bytree': 0.5311871644703503,
+            'num_leaves': 282,
+            'min_data_in_leaf': 15,
+            'n_estimators':  267,
+            'subsample': 0.9914539046207095,
+            'colsample_bytree': 0.4418469103893453,
         }
 
         if Tuning:
