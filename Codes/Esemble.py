@@ -1,15 +1,10 @@
-from imblearn.over_sampling import SMOTE
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 
 import torch
 import joblib
-import optuna
-import warnings
 import numpy as np
-import pandas as pd
 import xgboost as xgb
 import lightgbm as lgb
 import catboost as cat
@@ -90,10 +85,10 @@ class Esemble:
             y_train=self.y_train.values.reshape(-1, 1),
             eval_set=[(self.X_test.values, self.y_test.values.reshape(-1, 1))],
             max_epochs=self.num_rounds,
-            patience=10,
+            patience=15,
             loss_fn=F.cross_entropy,
-            batch_size=1024,
-            virtual_batch_size=512,
+            batch_size=2048,
+            virtual_batch_size=1024,
         )
 
         y_pred = bst.predict_proba(self.X_test.values)
@@ -102,7 +97,7 @@ class Esemble:
         accuracy = accuracy_score(self.y_test, predictions)
 
         joblib.dump(bst, '../Files/tab_model.pkl')
-        print("Output Code Classifier Accuracy:", accuracy)
+        print("Tabnet Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -132,7 +127,7 @@ class Esemble:
                 'num_class': 7,
 
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                'max_depth': trial.suggest_int('max_depth', 5, 30),
                 'num_leaves': trial.suggest_int('num_leaves', 50, 300),
                 'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 1, 100),
                 'n_estimators': trial.suggest_int('n_estimators', 50, 500),
@@ -188,12 +183,12 @@ class Esemble:
                 'verbose': True,
                 'device_name': device,
                 'cat_dims': [2, 11, 4, 12],
-                'cat_idxs': [i for i in range(9, 13)],
+                'cat_idxs': [i for i in range(7, 11)],
 
-                'n_d': trial.suggest_int('n_d', 8, 64),  # Decision 단계의 특성 차원
-                'n_a': trial.suggest_int('n_a', 8, 64),  # Attention 단계의 특성 차원
-                'n_steps': trial.suggest_int('n_steps', 3, 10),  # Attention 단계의 반복 횟수
-                'gamma': trial.suggest_float('gamma', 0.01, 2),  # Regularization 강도
+                'n_d': trial.suggest_int('n_d', 20, 64),  # Decision 단계의 특성 차원
+                'n_a': trial.suggest_int('n_a', 20, 64),  # Attention 단계의 특성 차원
+                'n_steps': trial.suggest_int('n_steps', 10, 30),  # Attention 단계의 반복 횟수
+                'gamma': trial.suggest_float('gamma', 0.8, 2),
             }
             accuracy = self.TabNet(params)
 
