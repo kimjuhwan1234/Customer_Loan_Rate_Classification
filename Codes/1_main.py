@@ -17,8 +17,8 @@ if __name__ == "__main__":
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
     Tuning = True
-    method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 650, Tuning)
+    method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
         if not Tuning:
@@ -52,7 +52,7 @@ if __name__ == "__main__":
                 'tree_learner': 'voting',
                 'num_class': 7,
 
-                'learning_rate': 0.10672172277306086,
+                'learning_rate':0.10672172277306086,
                 'max_depth': 24,
                 'num_leaves': 104,
                 'min_data_in_leaf': 15,
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                 'device': 'cuda',
                 'booster': 'gbtree',
                 'objective': 'multi:softprob',
-                'eval_metric': 'merror',
+                'eval_metric': 'mlogloss',
                 'num_class': 7,
 
                 'eta': 0.17649041654669656,
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                 'od_pval': 0.01,
 
                 'learning_rate': 0.3308132666978908,
-                'depth': 15,
+                'depth': 20,
                 'l2_leaf_reg': 10,
                 'num_leaves': 55,
                 'border_count': 298,
