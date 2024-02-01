@@ -141,7 +141,7 @@ class Esemble:
                 'device': 'cuda',
                 'booster': 'gbtree',
                 'objective': 'multi:softprob',
-                'eval_metric': 'merror',
+                'eval_metric': 'mlogloss',
                 'num_class': 7,
 
                 'eta': trial.suggest_float('eta', 0.01, 0.5),

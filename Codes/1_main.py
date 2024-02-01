@@ -16,9 +16,9 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = False
-    method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 2000, Tuning)
+    Tuning = True
+    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
 
     if method == 0:
         if not Tuning:
