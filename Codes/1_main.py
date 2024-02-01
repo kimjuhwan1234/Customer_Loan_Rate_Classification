@@ -16,9 +16,9 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = False
+    Tuning = True
     method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 100, Tuning)
+    E = Esemble(method, X_res, X_val, y_res, y_val, 650, Tuning)
 
     if method == 0:
         if not Tuning:
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=20)
+            study.optimize(E.objective, n_trials=30)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=20)
+            study.optimize(E.objective, n_trials=50)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=20)
+            study.optimize(E.objective, n_trials=30)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)
@@ -109,17 +109,17 @@ if __name__ == "__main__":
                 'grow_policy': 'Lossguide',
                 'od_pval': 0.01,
 
-                'learning_rate': 0.17606216022122398,
-                'depth': 19,
-                'l2_leaf_reg': 6,
-                'num_leaves': 148,
-                'border_count': 272,
+                'learning_rate': 0.3308132666978908,
+                'depth': 15,
+                'l2_leaf_reg': 10,
+                'num_leaves': 55,
+                'border_count': 298,
             }
             proba3 = E.CatBoost(params)
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=20)
+            study.optimize(E.objective, n_trials=30)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)

@@ -183,7 +183,7 @@ class Esemble:
                 'verbose': True,
                 'device_name': device,
                 'cat_dims': [2, 11, 4, 12],
-                'cat_idxs': [i for i in range(7, 11)],
+                'cat_idxs': [i for i in range(6, 10)],
 
                 'n_d': trial.suggest_int('n_d', 20, 64),  # Decision 단계의 특성 차원
                 'n_a': trial.suggest_int('n_a', 20, 64),  # Attention 단계의 특성 차원
