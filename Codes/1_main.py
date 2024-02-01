@@ -16,9 +16,9 @@ if __name__ == "__main__":
     smote = SMOTE(random_state=42)
     X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = True
+    Tuning = False
     method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
+    E = Esemble(method, X_res, X_val, y_res, y_val, 2000, Tuning)
 
     if method == 0:
         if not Tuning:
@@ -109,11 +109,11 @@ if __name__ == "__main__":
                 'grow_policy': 'Lossguide',
                 'od_pval': 0.01,
 
-                'learning_rate': 0.3308132666978908,
-                'depth': 20,
-                'l2_leaf_reg': 10,
-                'num_leaves': 55,
-                'border_count': 298,
+                'learning_rate': 0.3667491900056955,
+                'depth': 28,
+                'l2_leaf_reg': 9,
+                'num_leaves': 137,
+                'border_count': 277,
             }
             proba3 = E.CatBoost(params)
 
