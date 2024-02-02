@@ -7,18 +7,30 @@ import warnings
 import pandas as pd
 
 if __name__ == "__main__":
-    warnings.filterwarnings("ignore")
-    train = pd.read_csv('../Database/train_preprocessed.csv', index_col='ID')
-    X = train.drop(columns=['대출등급'])
-    y = train['대출등급']
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+    abcd = False
+    if abcd:
+        warnings.filterwarnings("ignore")
+        train = pd.read_csv('../Database/train_abcd.csv', index_col='ID')
+        X = train.drop(columns=['대출등급'])
+        y = train['대출등급']
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    smote = SMOTE(random_state=42)
-    X_res, y_res = smote.fit_resample(X_train, y_train)
+        smote = SMOTE(random_state=42)
+        X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    Tuning = True
-    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning)
+    if not abcd:
+        warnings.filterwarnings("ignore")
+        train = pd.read_csv('../Database/train_defg.csv', index_col='ID')
+        X = train.drop(columns=['대출등급'])
+        y = train['대출등급']
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        smote = SMOTE(random_state=42)
+        X_res, y_res = smote.fit_resample(X_train, y_train)
+
+    Tuning = False
+    method = 3  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_res, X_val, y_res, y_val, 1000, Tuning, abcd)
 
     if method == 0:
         if not Tuning:
@@ -30,14 +42,15 @@ if __name__ == "__main__":
                 'max_depth': 80,
                 'min_samples_split': 2,
                 'min_samples_leaf': 2,
-                'min_weight_fraction_leaf': 1,
                 'max_leaf_nodes': 10,
+
+                'random_state': 42,
             }
             proba0 = E.RandomForest(params)
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=30)
+            study.optimize(E.objective, n_trials=100)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)
@@ -50,21 +63,21 @@ if __name__ == "__main__":
                 'objective': 'multiclass',
                 'metric': 'multi_logloss',
                 'tree_learner': 'voting',
-                'num_class': 7,
+                'num_class': 4,
 
-                'learning_rate':0.10672172277306086,
-                'max_depth': 24,
-                'num_leaves': 104,
-                'min_data_in_leaf': 15,
-                'n_estimators': 476,
-                'subsample': 0.5912715342643231,
-                'colsample_bytree': 0.37175740831979154,
+                'learning_rate': 0.07262236691173093,
+                'max_depth': 29,
+                'num_leaves': 269,
+                'min_data_in_leaf': 5,
+                'n_estimators': 483,
+                'subsample': 0.22577115327782551,
+                'colsample_bytree': 0.7247910478396337,
             }
             proba1 = E.lightGBM(params)
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=50)
+            study.optimize(E.objective, n_trials=100)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)
@@ -76,22 +89,22 @@ if __name__ == "__main__":
                 'booster': 'gbtree',
                 'objective': 'multi:softprob',
                 'eval_metric': 'mlogloss',
-                'num_class': 7,
+                'num_class': 4,
 
-                'eta': 0.17649041654669656,
+                'eta': 0.11570506282108968,
                 'max_depth': 17,
                 'min_child_weight': 4,
-                'gamma': 0.7140173599495627,
-                'subsample': 0.9427295598784581,
-                'colsample_bytree': 0.7170099311806741,
-                'colsample_bylevel': 0.956430558338542,
-                'colsample_bynode': 0.9788900022922193,
+                'gamma': 0.4673653907355101,
+                'subsample': 0.8414340212323217,
+                'colsample_bytree': 0.6137340144642844,
+                'colsample_bylevel': 0.9874667930510251,
+                'colsample_bynode': 0.7785575663490459,
             }
             proba2 = E.XGBoost(params)
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=30)
+            study.optimize(E.objective, n_trials=100)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)
@@ -103,23 +116,22 @@ if __name__ == "__main__":
                 'boosting_type': 'Plain',
                 'loss_function': 'MultiClass',
                 'eval_metric': 'MultiClass',
-                'classes_count': 7,
+                'classes_count': 4,
 
-                'bootstrap_type': 'Bayesian',
                 'grow_policy': 'Lossguide',
                 'od_pval': 0.01,
 
-                'learning_rate': 0.3667491900056955,
-                'depth': 28,
-                'l2_leaf_reg': 9,
-                'num_leaves': 137,
-                'border_count': 277,
+                'learning_rate': 0.3,
+                'depth': 19,
+                'l2_leaf_reg': 4,
+                'num_leaves': 104,
+                'border_count': 298,
             }
             proba3 = E.CatBoost(params)
 
         if Tuning:
             study = optuna.create_study(direction='maximize')
-            study.optimize(E.objective, n_trials=30)
+            study.optimize(E.objective, n_trials=100)
 
             print('Number of finished trials:', len(study.trials))
             print('Best trial:', study.best_trial.params)

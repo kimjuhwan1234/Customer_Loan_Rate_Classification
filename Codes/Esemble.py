@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 
 class Esemble:
-    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, Tuning: bool):
+    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, Tuning: bool, abcd:bool):
         self.method = method
         self.X_train = X_train
         self.X_test = X_val
@@ -20,6 +20,7 @@ class Esemble:
         self.y_test = y_val
         self.num_rounds = num_rounds
         self.Tuning = Tuning
+        self.abcd = abcd
 
     def RandomForest(self, params):
         rf_model = RandomForestClassifier(**params)
@@ -28,8 +29,14 @@ class Esemble:
         predictions = y_pred.argmax(axis=1)
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(rf_model, '../Files/rf_model.pkl')
+        if self.abcd:
+            joblib.dump(rf_model, '../Files/rf_model_abcd.pkl')
+
+        if not self.abcd:
+            joblib.dump(rf_model, '../Files/rf_model_defg.pkl')
+
         print("RandomForest Accuracy:", accuracy)
+        print("Random Forest Accuracy:", accuracy_score(self.y_test, rf_model.predict(self.X_test)))
 
         return accuracy if self.Tuning else y_pred
 
@@ -42,7 +49,12 @@ class Esemble:
         predictions = [int(pred.argmax()) for pred in y_pred]
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(bst, '../Files/lgb_model.pkl')
+        if self.abcd:
+            joblib.dump(bst, '../Files/lgb_model_abcd.pkl')
+
+        if not self.abcd:
+            joblib.dump(bst, '../Files/lgb_model_defg.pkl')
+
         print("lightGBM Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
@@ -57,13 +69,18 @@ class Esemble:
         predictions = y_pred.argmax(axis=1)
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(bst, '../Files/xgb_model.pkl')
+        if self.abcd:
+            joblib.dump(bst, '../Files/xgb_model_abcd.pkl')
+
+        if not self.abcd:
+            joblib.dump(bst, '../Files/xgb_model_defg.pkl')
+
         print("XGBoost Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
     def CatBoost(self, params):
-        cat_features = [i for i in range(6, 10)]
+        cat_features = [i for i in range(4, 9)]
         train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
         val_pool = cat.Pool(data=self.X_test, label=self.y_test, cat_features=cat_features)
 
@@ -73,7 +90,12 @@ class Esemble:
         predictions = y_pred.argmax(axis=1)
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(bst, '../Files/cat_model.pkl')
+        if self.abcd:
+            joblib.dump(bst, '../Files/cat_model_abcd.pkl')
+
+        if not self.abcd:
+            joblib.dump(bst, '../Files/cat_model_defg.pkl')
+
         print("CatBoost Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
@@ -96,8 +118,13 @@ class Esemble:
         predictions = y_pred.argmax(axis=1)
         accuracy = accuracy_score(self.y_test, predictions)
 
-        joblib.dump(bst, '../Files/tab_model.pkl')
-        print("Tabnet Accuracy:", accuracy)
+        if self.abcd:
+            joblib.dump(bst, '../Files/tab_model_abcd.pkl')
+
+        if not self.abcd:
+            joblib.dump(bst, '../Files/tab_model_defg.pkl')
+
+        print("TabNet Accuracy:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -124,10 +151,10 @@ class Esemble:
                 'objective': 'multiclass',
                 'metric': 'multi_logloss',
                 'tree_learner': 'voting',
-                'num_class': 7,
+                'num_class': 4,
 
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 30),
+                'max_depth': trial.suggest_int('max_depth', 5, 80),
                 'num_leaves': trial.suggest_int('num_leaves', 50, 300),
                 'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 1, 100),
                 'n_estimators': trial.suggest_int('n_estimators', 50, 500),
@@ -142,7 +169,7 @@ class Esemble:
                 'booster': 'gbtree',
                 'objective': 'multi:softprob',
                 'eval_metric': 'mlogloss',
-                'num_class': 7,
+                'num_class': 4,
 
                 'eta': trial.suggest_float('eta', 0.01, 0.5),
                 'max_depth': trial.suggest_int('max_depth', 5, 20),
@@ -161,14 +188,14 @@ class Esemble:
                 'boosting_type': 'Plain',
                 'loss_function': 'MultiClass',
                 'eval_metric': 'MultiClass',
-                'classes_count': 7,
+                'classes_count': 4,
 
                 'grow_policy': 'Lossguide',
                 'bootstrap_type': 'Bayesian',
                 'od_pval': 0.01,
 
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
-                'depth': trial.suggest_int('depth', 5, 20),
+                'depth': trial.suggest_int('depth', 5, 30),
                 'l2_leaf_reg': trial.suggest_int('l2_leaf_reg', 3, 20),
                 'num_leaves': trial.suggest_int('num_leaves', 16, 300),
                 'border_count': trial.suggest_int('border_count', 1, 300),
@@ -182,8 +209,8 @@ class Esemble:
             params = {
                 'verbose': True,
                 'device_name': device,
-                'cat_dims': [2, 11, 4, 12],
-                'cat_idxs': [i for i in range(6, 10)],
+                'cat_dims': [2, 11, 4, 7, 12],
+                'cat_idxs': [i for i in range(4, 9)],
 
                 'n_d': trial.suggest_int('n_d', 20, 64),  # Decision 단계의 특성 차원
                 'n_a': trial.suggest_int('n_a', 20, 64),  # Attention 단계의 특성 차원
