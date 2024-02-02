@@ -36,7 +36,6 @@ class Esemble:
             joblib.dump(rf_model, '../Files/rf_model_defg.pkl')
 
         print("RandomForest Accuracy:", accuracy)
-        print("Random Forest Accuracy:", accuracy_score(self.y_test, rf_model.predict(self.X_test)))
 
         return accuracy if self.Tuning else y_pred
 
@@ -139,8 +138,6 @@ class Esemble:
                 'max_depth': trial.suggest_int('max_depth', 5, 80),
                 'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
                 'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
-                'min_weight_fraction_leaf': trial.suggest_float('min_weight_fraction_leaf', 0.01, 0.5),
-                'max_leaf_nodes': trial.suggest_int('max_leaf_nodes', 10, 100),
             }
             accuracy = self.RandomForest(params)
 
