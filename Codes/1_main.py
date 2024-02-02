@@ -29,8 +29,8 @@ if __name__ == "__main__":
         X_train, y_train = smote.fit_resample(X_train, y_train)
 
     Tuning = False
-    method = 0  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
-    E = Esemble(method, X_train, X_val, y_train, y_val, 2000, Tuning, abcd)
+    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    E = Esemble(method, X_train, X_val, y_train, y_val, 1000, Tuning, abcd)
 
     if method == 0:
         params = {
@@ -56,13 +56,13 @@ if __name__ == "__main__":
                     'tree_learner': 'voting',
                     'num_class': 4,
 
-                    'learning_rate': 0.05030824092242113,
-                    'max_depth': 30,
-                    'num_leaves': 269,
-                    'min_data_in_leaf': 5,
-                    'n_estimators': 485,
-                    'subsample': 0.36304547336992216,
-                    'colsample_bytree': 0.605449704120681,
+                    'learning_rate': 0.08748361678163433,
+                    'max_depth':70,
+                    'num_leaves': 261,
+                    'min_data_in_leaf': 25,
+                    'n_estimators': 266,
+                    'subsample': 0.2615864200338772,
+                    'colsample_bytree': 0.40973815068577557,
                 }
 
             if not abcd:
@@ -74,13 +74,13 @@ if __name__ == "__main__":
                     'tree_learner': 'voting',
                     'num_class': 4,
 
-                    'learning_rate': 0.05262236691173093,
-                    'max_depth': 29,
-                    'num_leaves': 269,
-                    'min_data_in_leaf': 5,
-                    'n_estimators': 483,
-                    'subsample': 0.22577115327782551,
-                    'colsample_bytree': 0.7247910478396337,
+                    'learning_rate': 0.23430996028026227,
+                    'max_depth': 43,
+                    'num_leaves': 151,
+                    'min_data_in_leaf': 4,
+                    'n_estimators': 392,
+                    'subsample': 0.15935732666416363,
+                    'colsample_bytree': 0.39844124393457364,
                 }
 
             proba1 = E.lightGBM(params)
@@ -102,14 +102,14 @@ if __name__ == "__main__":
                     'eval_metric': 'mlogloss',
                     'num_class': 4,
 
-                    'eta': 0.05570506282108968,
-                    'max_depth': 20,
-                    'min_child_weight': 4,
-                    'gamma': 0.4673653907355101,
-                    'subsample': 0.8414340212323217,
-                    'colsample_bytree': 0.6137340144642844,
-                    'colsample_bylevel': 0.9874667930510251,
-                    'colsample_bynode': 0.7785575663490459,
+                    'eta': 0.19070557785560746,
+                    'max_depth': 9,
+                    'min_child_weight': 1,
+                    'gamma': 0.10267706585587905,
+                    'subsample': 0.943989141923496,
+                    'colsample_bytree': 0.9719611765611176,
+                    'colsample_bylevel': 0.7786561610050658,
+                    'colsample_bynode': 0.9986410828042671,
                 }
 
             if not abcd:
@@ -120,14 +120,14 @@ if __name__ == "__main__":
                 'eval_metric': 'mlogloss',
                 'num_class': 4,
 
-                'eta': 0.11570506282108968,
-                'max_depth': 17,
-                'min_child_weight': 4,
-                'gamma': 0.4673653907355101,
-                'subsample': 0.8414340212323217,
-                'colsample_bytree': 0.6137340144642844,
-                'colsample_bylevel': 0.9874667930510251,
-                'colsample_bynode': 0.7785575663490459,
+                'eta': 0.19070557785560746,
+                'max_depth': 9,
+                'min_child_weight': 1,
+                'gamma': 0.10267706585587905,
+                'subsample': 0.943989141923496,
+                'colsample_bytree': 0.9719611765611176,
+                'colsample_bylevel': 0.7786561610050658,
+                'colsample_bynode': 0.9986410828042671,
             }
 
             proba2 = E.XGBoost(params)
@@ -152,11 +152,11 @@ if __name__ == "__main__":
                 'grow_policy': 'Lossguide',
                 'od_pval': 0.01,
 
-                'learning_rate': 0.05,
-                'depth': 19,
-                'l2_leaf_reg': 4,
-                'num_leaves': 150,
-                'border_count': 298,
+                'learning_rate': 0.315293658365394,
+                'depth': 21,
+                'l2_leaf_reg': 17,
+                'num_leaves': 245,
+                'border_count': 278,
             }
 
             if not abcd:
@@ -171,10 +171,10 @@ if __name__ == "__main__":
                     'od_pval': 0.01,
 
                     'learning_rate': 0.3,
-                    'depth': 19,
-                    'l2_leaf_reg': 4,
-                    'num_leaves': 104,
-                    'border_count': 298,
+                    'depth': 21,
+                    'l2_leaf_reg': 17,
+                    'num_leaves': 245,
+                    'border_count': 278,
                 }
 
             proba3 = E.CatBoost(params)

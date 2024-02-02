@@ -79,7 +79,7 @@ class Esemble:
         return accuracy if self.Tuning else y_pred
 
     def CatBoost(self, params):
-        cat_features = [i for i in range(4, 9)]
+        cat_features = [i for i in range(5, 10)]
         train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
         val_pool = cat.Pool(data=self.X_test, label=self.y_test, cat_features=cat_features)
 
