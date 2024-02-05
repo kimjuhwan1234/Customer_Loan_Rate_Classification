@@ -7,7 +7,7 @@ import warnings
 import pandas as pd
 
 if __name__ == "__main__":
-    abcd = False
+    abcd = True
     if abcd:
         warnings.filterwarnings("ignore")
         train = pd.read_csv('../Database/train_abcd.csv', index_col='ID')
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         X_train, y_train = smote.fit_resample(X_train, y_train)
 
     Tuning = False
-    method = 2  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    method = 1  # {RF=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_train, X_val, y_train, y_val, 1000, Tuning, abcd)
 
     if method == 0:
@@ -56,13 +56,13 @@ if __name__ == "__main__":
                     'tree_learner': 'voting',
                     'num_class': 4,
 
-                    'learning_rate': 0.08748361678163433,
-                    'max_depth':70,
-                    'num_leaves': 261,
-                    'min_data_in_leaf': 25,
-                    'n_estimators': 266,
-                    'subsample': 0.2615864200338772,
-                    'colsample_bytree': 0.40973815068577557,
+                    'learning_rate': 0.0256398127731036,
+                    'max_depth':61,
+                    'num_leaves': 79,
+                    'min_data_in_leaf': 1,
+                    'n_estimators': 302,
+                    'subsample': 0.4139350693211544,
+                    'colsample_bytree':  0.42250514844124865,
                 }
 
             if not abcd:
@@ -74,13 +74,13 @@ if __name__ == "__main__":
                     'tree_learner': 'voting',
                     'num_class': 4,
 
-                    'learning_rate': 0.23430996028026227,
-                    'max_depth': 43,
-                    'num_leaves': 151,
-                    'min_data_in_leaf': 4,
-                    'n_estimators': 392,
-                    'subsample': 0.15935732666416363,
-                    'colsample_bytree': 0.39844124393457364,
+                    'learning_rate': 0.070426470864687,
+                    'max_depth': 24,
+                    'num_leaves': 51,
+                    'min_data_in_leaf': 70,
+                    'n_estimators': 163,
+                    'subsample': 0.6395978179973374,
+                    'colsample_bytree': 0.5267981261630706,
                 }
 
             proba1 = E.lightGBM(params)

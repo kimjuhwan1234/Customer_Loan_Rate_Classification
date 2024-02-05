@@ -1,4 +1,4 @@
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
 from sklearn.ensemble import RandomForestClassifier
 from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
 
@@ -46,7 +46,7 @@ class Esemble:
         bst = lgb.train(params, train_data, self.num_rounds, valid_sets=[valid_data])
         y_pred = bst.predict(self.X_test, num_iteration=bst.best_iteration)
         predictions = [int(pred.argmax()) for pred in y_pred]
-        accuracy = accuracy_score(self.y_test, predictions)
+        accuracy = f1_score(self.y_test, predictions, average='macro')
 
         if self.abcd:
             joblib.dump(bst, '../Files/lgb_model_abcd.pkl')
