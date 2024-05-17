@@ -11,22 +11,28 @@ if __name__ == "__main__":
     X_val = pd.read_csv('Database/X_val.csv', index_col=0)
     y_val = pd.read_csv('Database/y_val.csv', index_col=0)
 
-    smote = SMOTE(sampling_strategy='minority', random_state=42)
-    X_train, y_train = smote.fit_resample(X_train, y_train)
+    sampling_name = ['SMOTE', 'ADASYN', 'KMeanSMOTE']
+    for j in range(3):
+        if j == 0:
+            smote = SMOTE(sampling_strategy='minority', random_state=42)
+            X_train, y_train = smote.fit_resample(X_train, y_train)
 
-    # adasyn = ADASYN(sampling_strategy='minority', random_state=42)
-    # X_train, y_train = adasyn.fit_resample(X_train, y_train)
+        elif j == 1:
+            adasyn = ADASYN(sampling_strategy='minority', random_state=42)
+            X_train, y_train = adasyn.fit_resample(X_train, y_train)
 
-    # kmsmote = KMeansSMOTE(sampling_strategy='minority', random_state=42, kmeans_estimator=7, cluster_balance_threshold=0.01)
-    # X_train, y_train = kmsmote.fit_resample(X_train, y_train)
+        else:
+            kmsmote = KMeansSMOTE(sampling_strategy='minority', random_state=42, kmeans_estimator=7,
+                                  cluster_balance_threshold=0.01)
+            X_train, y_train = kmsmote.fit_resample(X_train, y_train)
 
-    for i in range(4):
-        # {DT=0, lightGBM=1, XGBoost=2, CatBoost=3}
-        E = Esemble(i, X_train, X_val, y_train, y_val, 1000, 'SMOTE')
+        for i in range(4):
+            # {DT=0, lightGBM=1, XGBoost=2, CatBoost=3}
+            E = Esemble(i, X_train, X_val, y_train, y_val, 1000, sampling_name[j])
 
-        study = optuna.create_study(direction='maximize')
-        study.optimize(E.objective, n_trials=100)
+            study = optuna.create_study(direction='maximize')
+            study.optimize(E.objective, n_trials=100)
 
-        print('Number of finished trials:', len(study.trials))
-        print('Best trial:', study.best_trial.params)
-        E.save_best_model(study.best_trial.params)
+            print('Number of finished trials:', len(study.trials))
+            print('Best trial:', study.best_trial.params)
+            E.save_best_model(study.best_trial.params)
