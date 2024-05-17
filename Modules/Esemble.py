@@ -23,7 +23,7 @@ class Esemble:
         predictions = y_pred.argmax(axis=1)
         accuracy = f1_score(self.y_test, predictions, average='micro')
 
-        joblib.dump(bst, f'Files/dt_{self.name}_model.pkl')
+        # joblib.dump(bst, f'Files/dt_{self.name}_model.pkl')
         print("DT F1-Score:", accuracy)
         return accuracy
 
@@ -64,8 +64,8 @@ class Esemble:
         if self.method == 0:
             params = {
                 'criterion': 'entropy',
-                'max_depth': trial.suggest_int('max_depth', 5, 80),
                 'max_features': trial.suggest_float('max_features', 0.1, 0.9),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
             }
             accuracy = self.DecisionTree(params)
 
@@ -80,8 +80,8 @@ class Esemble:
                 'tree_learner': 'voting',
 
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 80),
-                'num_leaves': trial.suggest_int('num_leaves', 50, 300),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                # 'num_leaves': trial.suggest_int('num_leaves', 50, 300),
             }
             accuracy = self.lightGBM(params)
 
@@ -95,8 +95,8 @@ class Esemble:
                 'booster': 'gbtree',
 
                 'eta': trial.suggest_float('eta', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 100),
-                'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
+                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                # 'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
             }
             accuracy = self.XGBoost(params)
 
@@ -110,8 +110,8 @@ class Esemble:
                 'grow_policy': 'Lossguide',
                 'bootstrap_type': 'Bayesian',
 
-                'depth': trial.suggest_int('depth', 5, 16),
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
+                'depth': trial.suggest_int('depth', 5, 16),
             }
             accuracy = self.CatBoost(params)
 
@@ -126,6 +126,7 @@ class Esemble:
             bst = DecisionTreeClassifier(**best_params)
             bst.fit(self.X_train, self.y_train)
             joblib.dump(bst, f'Files/dt_{self.name}_model.pkl')
+            print(f'{f1_score(self.y_test, bst.predict(self.X_test), average="micro"):.4f}')
             print("Model saved!")
 
         if self.method == 1:
@@ -142,6 +143,7 @@ class Esemble:
             bst = LGBMClassifier(**best_params)
             bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)])
             joblib.dump(bst, f'Files/lgb_{self.name}_model.pkl')
+            print(f'{f1_score(self.y_test, bst.predict(self.X_test), average="micro"):.4f}')
             print("Model saved!")
 
         if self.method == 2:
@@ -157,6 +159,7 @@ class Esemble:
             bst = XGBClassifier(**best_params)
             bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)], verbose=100)
             joblib.dump(bst, f'Files/xgb_{self.name}_model.pkl')
+            print(f'{f1_score(self.y_test, bst.predict(self.X_test), average="micro"):.4f}')
             print("Model saved!")
 
         if self.method == 3:
@@ -173,4 +176,5 @@ class Esemble:
             bst = CatBoostClassifier(**best_params)
             bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)], verbose=100)
             joblib.dump(bst, f'Files/cat_{self.name}_model.pkl')
+            print(f'{f1_score(self.y_test, bst.predict(self.X_test), average="micro"):.4f}')
             print("Model saved!")

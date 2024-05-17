@@ -7,15 +7,16 @@ from sklearn.model_selection import train_test_split
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
-    train = pd.read_csv('Database/train_pre.csv', index_col=0)
-    X = train.drop(columns=['대출등급'])
-    y = train['대출등급']
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train = pd.read_csv('Database/X_train.csv', index_col=0)
+    y_train = pd.read_csv('Database/y_train.csv', index_col=0)
+    X_val = pd.read_csv('Database/X_val.csv', index_col=0)
+    y_val = pd.read_csv('Database/y_val.csv', index_col=0)
+
 
     # smote = SMOTE(random_state=42)
     # X_res, y_res = smote.fit_resample(X_train, y_train)
 
-    method = 0  # {DT=0, lightGBM=1, XGBoost=2, CatBoost=3}
+    method = 1  # {DT=0, lightGBM=1, XGBoost=2, CatBoost=3}
     E = Esemble(method, X_train, X_val, y_train, y_val, 1000, 'None')
 
     study = optuna.create_study(direction='maximize')
