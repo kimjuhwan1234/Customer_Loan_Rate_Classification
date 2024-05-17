@@ -1,18 +1,14 @@
-from sklearn.metrics import f1_score
-from sklearn.ensemble import RandomForestClassifier
-from pytorch_tabnet.multitask import TabNetMultiTaskClassifier
-
 import torch
 import joblib
-import numpy as np
 import xgboost as xgb
 import lightgbm as lgb
 import catboost as cat
-import torch.nn.functional as F
+from sklearn.metrics import f1_score
+from sklearn.ensemble import RandomForestClassifier
 
 
 class Esemble:
-    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, Tuning: bool, abcd:bool):
+    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, Tuning: bool, abcd: bool):
         self.method = method
         self.X_train = X_train
         self.X_test = X_val
@@ -27,15 +23,10 @@ class Esemble:
         rf_model.fit(self.X_train, self.y_train)
         y_pred = rf_model.predict_proba(self.X_test)
         predictions = y_pred.argmax(axis=1)
-        accuracy = accuracy_score(self.y_test, predictions)
+        accuracy = f1_score(self.y_test, predictions, average='micro')
 
-        if self.abcd:
-            joblib.dump(rf_model, '../Files/rf_model_abcd.pkl')
-
-        if not self.abcd:
-            joblib.dump(rf_model, '../Files/rf_model_defg.pkl')
-
-        print("RandomForest Accuracy:", accuracy)
+        joblib.dump(bst, 'Files/lgb_model.pkl')
+        print("lightGBM F1-Score:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -46,15 +37,10 @@ class Esemble:
         bst = lgb.train(params, train_data, self.num_rounds, valid_sets=[valid_data])
         y_pred = bst.predict(self.X_test, num_iteration=bst.best_iteration)
         predictions = [int(pred.argmax()) for pred in y_pred]
-        accuracy = f1_score(self.y_test, predictions, average='macro')
+        accuracy = f1_score(self.y_test, predictions, average='micro')
 
-        if self.abcd:
-            joblib.dump(bst, '../Files/lgb_model_abcd.pkl')
-
-        if not self.abcd:
-            joblib.dump(bst, '../Files/lgb_model_defg.pkl')
-
-        print("lightGBM Accuracy:", accuracy)
+        joblib.dump(bst, 'Files/lgb_model.pkl')
+        print("lightGBM F1-Score:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -66,15 +52,10 @@ class Esemble:
         X_test = xgb.DMatrix(self.X_test)
         y_pred = bst.predict(X_test)
         predictions = y_pred.argmax(axis=1)
-        accuracy = accuracy_score(self.y_test, predictions)
+        accuracy = f1_score(self.y_test, predictions, average='micro')
 
-        if self.abcd:
-            joblib.dump(bst, '../Files/xgb_model_abcd.pkl')
-
-        if not self.abcd:
-            joblib.dump(bst, '../Files/xgb_model_defg.pkl')
-
-        print("XGBoost Accuracy:", accuracy)
+        joblib.dump(bst, 'Files/xgb_model.pkl')
+        print("XGBoost F1-Score:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -87,43 +68,10 @@ class Esemble:
         bst.fit(train_pool, eval_set=val_pool, verbose=5)
         y_pred = bst.predict_proba(self.X_test)
         predictions = y_pred.argmax(axis=1)
-        accuracy = accuracy_score(self.y_test, predictions)
+        accuracy = f1_score(self.y_test, predictions, average='micro')
 
-        if self.abcd:
-            joblib.dump(bst, '../Files/cat_model_abcd.pkl')
-
-        if not self.abcd:
-            joblib.dump(bst, '../Files/cat_model_defg.pkl')
-
-        print("CatBoost Accuracy:", accuracy)
-
-        return accuracy if self.Tuning else y_pred
-
-    def TabNet(self, params):
-        bst = TabNetMultiTaskClassifier(**params)
-        bst.fit(
-            X_train=self.X_train.values,
-            y_train=self.y_train.values.reshape(-1, 1),
-            eval_set=[(self.X_test.values, self.y_test.values.reshape(-1, 1))],
-            max_epochs=self.num_rounds,
-            patience=15,
-            loss_fn=F.cross_entropy,
-            batch_size=2048,
-            virtual_batch_size=1024,
-        )
-
-        y_pred = bst.predict_proba(self.X_test.values)
-        y_pred = np.array(y_pred, dtype=np.float64).squeeze()
-        predictions = y_pred.argmax(axis=1)
-        accuracy = accuracy_score(self.y_test, predictions)
-
-        if self.abcd:
-            joblib.dump(bst, '../Files/tab_model_abcd.pkl')
-
-        if not self.abcd:
-            joblib.dump(bst, '../Files/tab_model_defg.pkl')
-
-        print("TabNet Accuracy:", accuracy)
+        joblib.dump(bst, 'Files/cat_model.pkl')
+        print("CatBoost F1-Score:", accuracy)
 
         return accuracy if self.Tuning else y_pred
 
@@ -198,22 +146,5 @@ class Esemble:
                 'border_count': trial.suggest_int('border_count', 1, 300),
             }
             accuracy = self.CatBoost(params)
-
-        if self.method == 4:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            print(device)
-
-            params = {
-                'verbose': True,
-                'device_name': device,
-                'cat_dims': [2, 11, 4, 7, 12],
-                'cat_idxs': [i for i in range(4, 9)],
-
-                'n_d': trial.suggest_int('n_d', 20, 64),  # Decision 단계의 특성 차원
-                'n_a': trial.suggest_int('n_a', 20, 64),  # Attention 단계의 특성 차원
-                'n_steps': trial.suggest_int('n_steps', 10, 30),  # Attention 단계의 반복 횟수
-                'gamma': trial.suggest_float('gamma', 0.8, 2),
-            }
-            accuracy = self.TabNet(params)
 
         return accuracy
