@@ -11,13 +11,13 @@ if __name__ == "__main__":
     X_val = pd.read_csv('Database/X_val.csv', index_col=0)
     y_val = pd.read_csv('Database/y_val.csv', index_col=0)
 
-    smote = SMOTE(random_state=42)
+    smote = SMOTE(sampling_strategy='minority', random_state=42)
     X_train, y_train = smote.fit_resample(X_train, y_train)
 
-    # adasyn = ADASYN(random_state=42)
+    # adasyn = ADASYN(sampling_strategy='minority', random_state=42)
     # X_train, y_train = adasyn.fit_resample(X_train, y_train)
-    #
-    # kmsmote = KMeansSMOTE(random_state=42)
+
+    # kmsmote = KMeansSMOTE(sampling_strategy='minority', random_state=42, kmeans_estimator=7, cluster_balance_threshold=0.01)
     # X_train, y_train = kmsmote.fit_resample(X_train, y_train)
 
     for i in range(4):

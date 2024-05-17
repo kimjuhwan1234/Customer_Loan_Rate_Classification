@@ -1,0 +1,9 @@
+learning_rate: 0.09446941298549429
+depth: 11
+task_type: GPU
+classes_count: 7
+early_stopping_rounds: 10
+loss_function: MultiClass
+eval_metric: MultiClass
+grow_policy: Lossguide
+bootstrap_type: Bayesian
