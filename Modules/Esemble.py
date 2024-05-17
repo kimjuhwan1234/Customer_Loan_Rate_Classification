@@ -113,7 +113,6 @@ class Esemble:
                 'loss_function': 'MultiClass',
                 'eval_metric': 'MultiClass',
                 'grow_policy': 'Lossguide',
-                'bootstrap_type': 'Bayesian',
 
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
                 'depth': trial.suggest_int('depth', 5, 16),
