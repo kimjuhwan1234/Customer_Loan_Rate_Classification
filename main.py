@@ -3,7 +3,6 @@ import warnings
 import pandas as pd
 from Modules.Esemble import *
 from imblearn.over_sampling import SMOTE, ADASYN, KMeansSMOTE
-from sklearn.model_selection import train_test_split
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")

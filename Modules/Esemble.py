@@ -5,6 +5,7 @@ from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 
+
 class Esemble:
     def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, sampling_name):
         self.method = method
