@@ -1,0 +1,9 @@
+learning_rate: 0.05014620710710915
+max_depth: 11
+device: cpu
+num_class: 7
+early_stopping_rounds: 10
+objective: multiclass
+metric: multi_logloss
+boosting_type: gbrt
+tree_learner: voting
