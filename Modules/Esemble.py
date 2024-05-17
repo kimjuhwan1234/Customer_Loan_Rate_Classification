@@ -1,150 +1,176 @@
-import torch
 import joblib
-import xgboost as xgb
-import lightgbm as lgb
-import catboost as cat
-from sklearn.metrics import f1_score
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import *
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 
 class Esemble:
-    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, Tuning: bool, abcd: bool):
+    def __init__(self, method, X_train, X_val, y_train, y_val, num_rounds, sampling_name):
         self.method = method
         self.X_train = X_train
         self.X_test = X_val
         self.y_train = y_train
         self.y_test = y_val
         self.num_rounds = num_rounds
-        self.Tuning = Tuning
-        self.abcd = abcd
+        self.name = sampling_name
 
-    def RandomForest(self, params):
-        rf_model = RandomForestClassifier(**params)
-        rf_model.fit(self.X_train, self.y_train)
-        y_pred = rf_model.predict_proba(self.X_test)
-        predictions = y_pred.argmax(axis=1)
-        accuracy = f1_score(self.y_test, predictions, average='micro')
-
-        joblib.dump(bst, 'Files/lgb_model.pkl')
-        print("lightGBM F1-Score:", accuracy)
-
-        return accuracy if self.Tuning else y_pred
-
-    def lightGBM(self, params):
-        train_data = lgb.Dataset(self.X_train, label=self.y_train)
-        valid_data = lgb.Dataset(self.X_test, label=self.y_test, reference=train_data)
-
-        bst = lgb.train(params, train_data, self.num_rounds, valid_sets=[valid_data])
-        y_pred = bst.predict(self.X_test, num_iteration=bst.best_iteration)
-        predictions = [int(pred.argmax()) for pred in y_pred]
-        accuracy = f1_score(self.y_test, predictions, average='micro')
-
-        joblib.dump(bst, 'Files/lgb_model.pkl')
-        print("lightGBM F1-Score:", accuracy)
-
-        return accuracy if self.Tuning else y_pred
-
-    def XGBoost(self, params):
-        train_data = xgb.DMatrix(self.X_train, label=self.y_train)
-        valid_data = xgb.DMatrix(self.X_test, label=self.y_test)
-
-        bst = xgb.train(params, train_data, self.num_rounds, evals=[(valid_data, 'eval')])
-        X_test = xgb.DMatrix(self.X_test)
-        y_pred = bst.predict(X_test)
-        predictions = y_pred.argmax(axis=1)
-        accuracy = f1_score(self.y_test, predictions, average='micro')
-
-        joblib.dump(bst, 'Files/xgb_model.pkl')
-        print("XGBoost F1-Score:", accuracy)
-
-        return accuracy if self.Tuning else y_pred
-
-    def CatBoost(self, params):
-        cat_features = [i for i in range(5, 10)]
-        train_pool = cat.Pool(data=self.X_train, label=self.y_train, cat_features=cat_features)
-        val_pool = cat.Pool(data=self.X_test, label=self.y_test, cat_features=cat_features)
-
-        bst = cat.CatBoostClassifier(**params, iterations=self.num_rounds)
-        bst.fit(train_pool, eval_set=val_pool, verbose=5)
+    def DecisionTree(self, params):
+        bst = DecisionTreeClassifier(**params)
+        bst.fit(self.X_train, self.y_train)
         y_pred = bst.predict_proba(self.X_test)
         predictions = y_pred.argmax(axis=1)
         accuracy = f1_score(self.y_test, predictions, average='micro')
 
-        joblib.dump(bst, 'Files/cat_model.pkl')
-        print("CatBoost F1-Score:", accuracy)
+        joblib.dump(bst, f'Files/dt_{self.name}_model.pkl')
+        print("DT F1-Score:", accuracy)
+        return accuracy
 
-        return accuracy if self.Tuning else y_pred
+    def lightGBM(self, params):
+        bst = LGBMClassifier(**params, n_estimators=self.num_rounds, verbose_eval=100)
+        bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)])
+        y_pred = bst.predict_proba(self.X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = f1_score(self.y_test, predictions, average='micro')
+
+        joblib.dump(bst, f'Files/lgb_{self.name}_model.pkl')
+        print("lightGBM F1-Score:", accuracy)
+        return accuracy
+
+    def XGBoost(self, params):
+        bst = XGBClassifier(**params, n_estimators=self.num_rounds)
+        bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)], verbose=100)
+        y_pred = bst.predict_proba(self.X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = f1_score(self.y_test, predictions, average='micro')
+
+        joblib.dump(bst, f'Files/xgb_{self.name}_model.pkl')
+        print("XGBoost F1-Score:", accuracy)
+        return accuracy
+
+    def CatBoost(self, params):
+        bst = CatBoostClassifier(**params, iterations=self.num_rounds)
+        bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)], verbose=100)
+        y_pred = bst.predict_proba(self.X_test)
+        predictions = y_pred.argmax(axis=1)
+        accuracy = f1_score(self.y_test, predictions, average='micro')
+
+        joblib.dump(bst, f'Files/cat_{self.name}_model.pkl')
+        print("CatBoost F1-Score:", accuracy)
+        return accuracy
 
     def objective(self, trial):
-
         if self.method == 0:
             params = {
                 'criterion': 'entropy',
-                'class_weight': 'balanced',
-
-                'n_estimators': trial.suggest_int('n_estimators', 100, 500),
                 'max_depth': trial.suggest_int('max_depth', 5, 80),
-                'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
-                'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
+                'max_features': trial.suggest_float('max_features', 0.1, 0.9),
             }
-            accuracy = self.RandomForest(params)
+            accuracy = self.DecisionTree(params)
 
         if self.method == 1:
             params = {
                 'device': 'cpu',
-                'boosting_type': 'gbrt',
+                'num_class': 7,
+                'early_stopping_rounds': 10,
                 'objective': 'multiclass',
                 'metric': 'multi_logloss',
+                'boosting_type': 'gbrt',
                 'tree_learner': 'voting',
-                'num_class': 4,
 
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
                 'max_depth': trial.suggest_int('max_depth', 5, 80),
                 'num_leaves': trial.suggest_int('num_leaves', 50, 300),
-                'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 1, 100),
-                'n_estimators': trial.suggest_int('n_estimators', 50, 500),
-                'subsample': trial.suggest_float('subsample', 0.01, 1),
-                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.01, 1),
             }
             accuracy = self.lightGBM(params)
 
         if self.method == 2:
             params = {
                 'device': 'cuda',
-                'booster': 'gbtree',
+                'num_class': 7,
+                'early_stopping_rounds': 10,
                 'objective': 'multi:softprob',
                 'eval_metric': 'mlogloss',
-                'num_class': 4,
+                'booster': 'gbtree',
 
                 'eta': trial.suggest_float('eta', 0.01, 0.5),
-                'max_depth': trial.suggest_int('max_depth', 5, 20),
+                'max_depth': trial.suggest_int('max_depth', 5, 100),
                 'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-                'gamma': trial.suggest_float('gamma', 0.1, 5),
-                'subsample': trial.suggest_float('subsample', 0.5, 1),
-                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.5, 1),
-                'colsample_bylevel': trial.suggest_float('colsample_bylevel', 0.01, 1),
-                'colsample_bynode': trial.suggest_float('colsample_bynode', 0.01, 1),
             }
             accuracy = self.XGBoost(params)
 
         if self.method == 3:
             params = {
                 'task_type': 'GPU',
-                'boosting_type': 'Plain',
+                'classes_count': 7,
+                'early_stopping_rounds': 10,
                 'loss_function': 'MultiClass',
                 'eval_metric': 'MultiClass',
-                'classes_count': 4,
-
                 'grow_policy': 'Lossguide',
                 'bootstrap_type': 'Bayesian',
-                'od_pval': 0.01,
 
+                'depth': trial.suggest_int('depth', 5, 16),
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.5),
-                'depth': trial.suggest_int('depth', 5, 30),
-                'l2_leaf_reg': trial.suggest_int('l2_leaf_reg', 3, 20),
-                'num_leaves': trial.suggest_int('num_leaves', 16, 300),
-                'border_count': trial.suggest_int('border_count', 1, 300),
             }
             accuracy = self.CatBoost(params)
 
         return accuracy
+
+    def save_best_model(self, best_params):
+        if self.method == 0:
+            best_params.update({
+                'criterion': 'entropy',
+            })
+
+            bst = DecisionTreeClassifier(**best_params)
+            bst.fit(self.X_train, self.y_train)
+            joblib.dump(bst, f'Files/dt_{self.name}_model.pkl')
+            print("Model saved!")
+
+        if self.method == 1:
+            best_params.update({
+                'device': 'cpu',
+                'num_class': 7,
+                'early_stopping_rounds': 10,
+                'objective': 'multiclass',
+                'metric': 'multi_logloss',
+                'boosting_type': 'gbrt',
+                'tree_learner': 'voting',
+            })
+
+            bst = LGBMClassifier(**best_params)
+            bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)])
+            joblib.dump(bst, f'Files/lgb_{self.name}_model.pkl')
+            print("Model saved!")
+
+        if self.method == 2:
+            best_params.update({
+                'device': 'cuda',
+                'num_class': 7,
+                'early_stopping_rounds': 10,
+                'objective': 'multi:softprob',
+                'eval_metric': 'mlogloss',
+                'booster': 'gbtree',
+            })
+
+            bst = XGBClassifier(**best_params)
+            bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)], verbose=100)
+            joblib.dump(bst, f'Files/xgb_{self.name}_model.pkl')
+            print("Model saved!")
+
+        if self.method == 3:
+            best_params.update({
+                'task_type': 'GPU',
+                'classes_count': 7,
+                'early_stopping_rounds': 10,
+                'loss_function': 'MultiClass',
+                'eval_metric': 'MultiClass',
+                'grow_policy': 'Lossguide',
+                'bootstrap_type': 'Bayesian',
+            })
+
+            bst = CatBoostClassifier(**best_params)
+            bst.fit(self.X_train, self.y_train, eval_set=[(self.X_test, self.y_test)], verbose=100)
+            joblib.dump(bst, f'Files/cat_{self.name}_model.pkl')
+            print("Model saved!")
