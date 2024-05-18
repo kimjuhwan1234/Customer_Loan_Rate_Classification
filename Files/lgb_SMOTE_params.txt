@@ -1,5 +1,5 @@
-learning_rate: 0.07529342171806488
-max_depth: 11
+learning_rate: 0.02673037509460483
+max_depth: 12
 device: cpu
 num_class: 7
 early_stopping_rounds: 10

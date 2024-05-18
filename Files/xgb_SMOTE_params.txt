@@ -1,5 +1,5 @@
-eta: 0.12113908982520866
-max_depth: 10
+eta: 0.10803872113525552
+max_depth: 8
 device: cuda
 num_class: 7
 early_stopping_rounds: 10
