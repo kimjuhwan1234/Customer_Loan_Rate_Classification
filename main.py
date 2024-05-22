@@ -12,16 +12,16 @@ if __name__ == "__main__":
     y_val = pd.read_csv('Database/y_val.csv', index_col=0)
 
     sampling_name = ['SMOTE', 'ADASYN', 'KMeanSMOTE']
-    for j in range(3):
-        if j == 0:
+    for name in enumerate(sampling_name):
+        if name == 'SMOTE':
             smote = SMOTE(sampling_strategy='minority', random_state=42)
             X_train, y_train = smote.fit_resample(X_train, y_train)
 
-        elif j == 1:
+        elif name == 'ADASYN':
             adasyn = ADASYN(sampling_strategy='minority', random_state=42)
             X_train, y_train = adasyn.fit_resample(X_train, y_train)
 
-        else:
+        elif name == 'KMeanSMOTE':
             kmsmote = KMeansSMOTE(sampling_strategy='minority', random_state=42, kmeans_estimator=7,
                                   cluster_balance_threshold=0.01)
             X_train, y_train = kmsmote.fit_resample(X_train, y_train)
