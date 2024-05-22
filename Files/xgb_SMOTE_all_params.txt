@@ -1,0 +1,8 @@
+eta: 0.010721739658848258
+max_depth: 10
+device: cuda
+num_class: 7
+early_stopping_rounds: 10
+objective: multi:softprob
+eval_metric: mlogloss
+booster: gbtree
