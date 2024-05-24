@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 from collections import Counter
+from imblearn.over_sampling import SMOTE
 
-
-class SMOTE:
+class CUSTOM_SMOTE:
     def __init__(self):
         pass
 
@@ -80,12 +80,22 @@ class SMOTE:
 
 
 if __name__ == "__main__":
-    test_in = pd.read_csv('../Database/test_pre_input.csv', index_col=0)
-    test_out = pd.read_csv('../Database/test_pre_output.csv', index_col=0)
+    X_train = pd.read_csv('../Database/X_train.csv', index_col=0)
+    y_train = pd.read_csv('../Database/y_train.csv', index_col=0)
     # SMOTE 적용
     features = [0, 2, 4, 6, 11, 12]
-    S = SMOTE()
-    X_balanced, y_balanced = S.SMOTE(test_in, test_out, 5, features)
+    S = CUSTOM_SMOTE()
+    X_balanced, y_balanced = S.SMOTE(X_train, y_train, 5, features)
 
-    print("Original class distribution:", Counter(test_out.iloc[:, 0].values))
-    print("New class distribution:", Counter(y_balanced))
+    smote = SMOTE(sampling_strategy='minority', random_state=42)
+    X_res, y_res = smote.fit_resample(X_train, y_train)
+
+    print("Original class distribution:", Counter(y_train.iloc[:, 0].values))
+    print("CUSTOM SMOTE distribution:", Counter(y_balanced))
+    print(X_balanced.shape)
+    print(y_balanced.shape)
+    print("SMOTE distribution:", Counter(y_res.iloc[:, 0].values))
+    print(X_res.shape)
+    print(y_res.shape)
+
+
