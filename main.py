@@ -40,9 +40,10 @@ if __name__ == "__main__":
             features = [0, 2, 4, 6, 11, 12]
             S = CUSTOM_SMOTE()
             X_train, y_train = S.SMOTE(X_train, y_train, 5, features)
+            X_val = X_val.values
+            y_val = y_val.values
 
-
-        for i in range(4):
+        for i in range(3, 4):
             # {DT=0, lightGBM=1, XGBoost=2, CatBoost=3}
             E = Esemble(i, X_train, X_val, y_train, y_val, 1000, name)
 
