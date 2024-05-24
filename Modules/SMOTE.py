@@ -2,20 +2,19 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 
+
 class SMOTE:
-    def __init__(self, ratio, K, features):
-        self.ratio = ratio
-        self.K = K
-        self.features = features
+    def __init__(self):
+        pass
 
     def nearest_neighbour(self, X, x, K, features):
-        X_selected = X[:, features]
+        X_selected = X.iloc[:, features]
         x_selected = x[features]
 
         distances = np.linalg.norm(X_selected - x_selected, axis=1)
         indices = np.argsort(distances)[1:K + 1]
 
-        differences = X_selected[indices] - x_selected
+        differences = X_selected.iloc[indices] - x_selected
         weights = np.random.random((K, 1))
         additive = differences * weights
         return additive
@@ -27,43 +26,66 @@ class SMOTE:
         new_samples[:, features] += additive
         return new_samples
 
-    def integrate_result(self, X, y, K, features):
-        X_df = pd.DataFrame(X)
-        minority_class = min(Counter(y), key=Counter(y).get)
-        X_minority = X_df[y == minority_class]
-
-        new_samples_list = X_minority.apply(lambda row: self.generate_new_samples(row, X, K, features), axis=1)
+    def integrate_result(self, X, y, to_generated_num, K, features):
+        new_samples_list = X.apply(lambda row: self.generate_new_samples(row, X, K, features), axis=1)
         new_samples = np.vstack(new_samples_list)
 
-        new_X = np.vstack([X, new_samples])
-        new_y = np.hstack([y, np.array([minority_class] * len(new_samples))])
+        if new_samples.shape[0] < to_generated_num:
+            to_generated_num = new_samples.shape[0]
 
-        return new_X, new_y
+        random_idx = np.random.choice(new_samples.shape[0], size=to_generated_num, replace=False)
+        random_samples = new_samples[random_idx, :]
 
-    def SMOTE(self, X, y):
-        if self.features is None:
-            self.features = list(range(X.shape[1]))
+        self.X = np.vstack([self.X, random_samples])
+        self.y = np.hstack([self.y, np.repeat(y.unique(), to_generated_num)])
 
-        self.X = X
-        self.y = y
+    def SMOTE(self, X, y, K, features=None):
+        if features is None:
+            features = list(range(X.shape[1]))
 
-        class_counts = Counter(self.y)
-        minority_class = min(class_counts, key=class_counts.get)
+        if isinstance(y, pd.DataFrame):
+            y = y.iloc[:, 0]
 
-        while class_counts[minority_class] / len(self.y) < self.ratio:
-            X, y = self.integrate_result(self.X, self.y, self.K, self.features)
-            class_counts = Counter(y)
-            minority_class = min(class_counts, key=class_counts.get)
+        self.X = X.values
+        self.y = y.values
 
-        return X, y
+        unique_class = list(y.unique())
+
+        class_indices = []
+        for i in range(len(unique_class)):
+            indices = y[y == unique_class[i]].index.tolist()
+            class_indices.append(indices)
+
+        class_amounts = []
+        for i in range(len(class_indices)):
+            class_amounts.append(len(class_indices[i]))
+
+        class_proportions = []
+        for i in range(len(class_amounts)):
+            class_proportions.append(class_amounts[i] / max(class_amounts))
+
+        to_smote_idx_list = []
+        to_smote_amount_list = []
+        for i in range(len(class_proportions)):
+            if class_proportions[i] < 0.3:
+                to_smote_idx_list.append(class_indices[i])
+                num = int(max(class_amounts) * 0.3) - class_amounts[i]
+                to_smote_amount_list.append(num)
+
+        for i in range(len(to_smote_idx_list)):
+            self.integrate_result(X.loc[to_smote_idx_list[i]], y[to_smote_idx_list[i]], to_smote_amount_list[i], K,
+                                  features)
+
+        return self.X, self.y
+
 
 if __name__ == "__main__":
     test_in = pd.read_csv('../Database/test_pre_input.csv', index_col=0)
     test_out = pd.read_csv('../Database/test_pre_output.csv', index_col=0)
     # SMOTE 적용
-    features = [0, 1, 2, 3, 4, 5, 6, 7, 11, 12]
-    S = SMOTE(0.1, 2, features)
-    X_balanced, y_balanced = S.SMOTE(test_in, test_out)
+    features = [0, 2, 4, 6, 11, 12]
+    S = SMOTE()
+    X_balanced, y_balanced = S.SMOTE(test_in, test_out, 5, features)
 
-    print("Original class distribution:", Counter(test_out))
+    print("Original class distribution:", Counter(test_out.iloc[:, 0].values))
     print("New class distribution:", Counter(y_balanced))
