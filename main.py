@@ -43,7 +43,7 @@ if __name__ == "__main__":
             X_val = X_val.values
             y_val = y_val.values
 
-        for i in range(3, 4):
+        for i in range(4):
             # {DT=0, lightGBM=1, XGBoost=2, CatBoost=3}
             E = Esemble(i, X_train, X_val, y_train, y_val, 1000, name)
 
